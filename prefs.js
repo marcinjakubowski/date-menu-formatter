@@ -36,6 +36,7 @@ var Fields = {
     PATTERN             : 'pattern',
     USE_DEFAULT_LOCALE  : 'use-default-locale',
     CUSTOM_LOCALE       : 'custom-locale',
+    REMOVE_MESSAGES_INDICATOR: 'remove-messages-indicator'
 };
 
 const SCHEMA_NAME = 'org.gnome.shell.extensions.date-menu-formatter';
@@ -117,12 +118,20 @@ class Preferences {
 
         const customLocaleEdit = new Gtk.Entry({ buffer: new Gtk.EntryBuffer() })
         
+        const removeMessagesIndicatorLabel = new Gtk.Label({
+            label: _("Remove unread messages indicator"),
+            hexpand: true,
+            halign: Gtk.Align.START
+        })
+        const removeMessagesIndicatorEdit = new Gtk.Switch()
 
 
         addRow(patternLabel, previewLabel)
         addRow(patternEdit, patternPreview)
         addRow(useDefaultLocaleLabel, useDefaultLocaleEdit)
         addRow(customLocaleLabel, customLocaleEdit)
+        addRow(removeMessagesIndicatorLabel, removeMessagesIndicatorEdit)
+        addRow(null, new Gtk.Separator())
 
 
         const markup_help1 = _(`<b>Available pattern components</b>
@@ -178,6 +187,7 @@ class Preferences {
         SettingsSchema.bind(Fields.PATTERN, patternEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
         SettingsSchema.bind(Fields.USE_DEFAULT_LOCALE, useDefaultLocaleEdit, 'active', Gio.SettingsBindFlags.DEFAULT);
         SettingsSchema.bind(Fields.CUSTOM_LOCALE, customLocaleEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
+        SettingsSchema.bind(Fields.REMOVE_MESSAGES_INDICATOR, removeMessagesIndicatorEdit, 'active', Gio.SettingsBindFlags.DEFAULT)
         const sensitivityBindFlags = Gio.SettingsBindFlags.GET | Gio.SettingsBindFlags.NO_SENSITIVITY | Gio.SettingsBindFlags.INVERT_BOOLEAN
         SettingsSchema.bind(Fields.USE_DEFAULT_LOCALE, customLocaleEdit, 'sensitive', sensitivityBindFlags)
         SettingsSchema.bind(Fields.USE_DEFAULT_LOCALE, customLocaleLabel, 'sensitive', sensitivityBindFlags)
@@ -196,11 +206,11 @@ class Preferences {
     }
 
     generatePreview() {
-        const text = '#' + this._pattern.text.replaceAll("\\n", "\n")
+        const text = Utils.convertToPattern(this._pattern.text)
         const locale = this._useDefaultLocale.active ? Utils.getCurrentLocale() : this._customLocale.text
         if (text.length > 1) {
             try { 
-                this._preview.label = (new SimpleDateFormat(locale)).format(text, new Date())
+                this._preview.label = Utils.convertFromPattern((new SimpleDateFormat(locale)).format(text, new Date()))
                 this._previewErrorCount = 0                
             }
             catch (e) {

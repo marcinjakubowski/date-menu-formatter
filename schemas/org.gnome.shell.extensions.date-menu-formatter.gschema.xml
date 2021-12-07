@@ -17,5 +17,10 @@
         <summary>Should default system locale be used</summary>
         <description></description>
     </key>    
+    <key type="b" name="remove-messages-indicator">
+        <default>false</default>
+        <summary>Should unread messages indicator be removed</summary>
+        <description></description>
+    </key>    
   </schema>
 </schemalist>

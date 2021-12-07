@@ -33,6 +33,7 @@ let PATTERN = "";
 let USE_DEFAULT_LOCALE = true
 let CUSTOM_LOCALE = ""
 let LOCALE = Utils.getCurrentLocale()
+let REMOVE_MESSAGES_INDICATOR = false
 
 
 class Extension {
@@ -50,19 +51,28 @@ class Extension {
     _loadSettings() {
         this._settings = Prefs.SettingsSchema;
         this._settingsChangedId = this._settings.connect('changed', this._onSettingsChange.bind(this));
-        this._fetchSettings();
+        this._onSettingsChange()
     }
 
     _fetchSettings() {
-        PATTERN = '#' + this._settings.get_string(Prefs.Fields.PATTERN).replaceAll("\\n", "\n");
+        PATTERN = Utils.convertToPattern(this._settings.get_string(Prefs.Fields.PATTERN));
+        REMOVE_MESSAGES_INDICATOR = this._settings.get_boolean(Prefs.Fields.REMOVE_MESSAGES_INDICATOR);
         USE_DEFAULT_LOCALE = this._settings.get_boolean(Prefs.Fields.USE_DEFAULT_LOCALE);
         CUSTOM_LOCALE = this._settings.get_string(Prefs.Fields.CUSTOM_LOCALE);
         const locale = USE_DEFAULT_LOCALE ? Utils.getCurrentLocale() : CUSTOM_LOCALE
         this._formatter = new SimpleDateFormat(locale)
     }
 
+    _removeIndicator() {
+        StatusArea.dateMenu.get_children()[0].remove_child(StatusArea.dateMenu._indicator);
+    }
+    _restoreIndicator() {
+        StatusArea.dateMenu.get_children()[0].insert_child_at_index(StatusArea.dateMenu._indicator, 2);
+    }
+
     _onSettingsChange() {
         this._fetchSettings();
+        REMOVE_MESSAGES_INDICATOR ? this._removeIndicator() : this._restoreIndicator()
     }    
 
     enable() {
@@ -76,7 +86,7 @@ class Extension {
 
     update() {
         try {
-            this._display.text = this._formatter.format(PATTERN, new Date())
+            this._display.text = Utils.convertFromPattern(this._formatter.format(PATTERN, new Date()))
         }
         // if there is an exception during formatting, use the default display's text
         catch (e) {
@@ -90,6 +100,7 @@ class Extension {
     disable() {
         StatusArea.dateMenu.get_children()[0].insert_child_at_index(StatusArea.dateMenu._clockDisplay, 1);
         StatusArea.dateMenu.get_children()[0].remove_child(this._display);
+        this._restoreIndicator()
         Mainloop.source_remove(this._timerId)
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);

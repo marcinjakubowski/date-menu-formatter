@@ -38,7 +38,9 @@ let LOCALE = Utils.getCurrentLocale()
 class Extension {
     constructor() {
         // there has to be a better way
-        this._display = new St.Label({ style: 'font-size: 9pt; text-align: center'})
+        this._display = new St.Label({ style: 'font-size: 9pt; text-align: center' })
+        this._display.set_x_align(Clutter.ActorAlign.CENTER)
+        this._display.set_y_align(Clutter.ActorAlign.CENTER)
         this._display.text = "..."
         this._timerId = -1
         this._formatter = null

@@ -61,8 +61,6 @@ class Preferences {
             column_homogeneous: false,
             row_homogeneous: false
         });
-
-        const useDefaultLocaleEdit = new Gtk.Switch()
         
         const addRow = ((main) => {
             let row = 0;
@@ -87,49 +85,39 @@ class Preferences {
             };
         })(this.main);
 
-        const patternLabel = new Gtk.Label({
-            label: _("Pattern"),
-            hexpand: true,
-            halign: Gtk.Align.START
-        })
-        const previewLabel = new Gtk.Label({
-            label: _("Preview"),
-            hexpand: true,
-            halign: Gtk.Align.START
-        })        
-        const patternPreview = new Gtk.Label({
-            label: "",
-            hexpand: true,
-            halign: Gtk.Align.START
-        })               
+        const createLabel = (label) => {
+            return new Gtk.Label({
+                label: label,
+                hexpand: true,
+                halign: Gtk.Align.START
+            })
+        }
+
+        
+        const patternLabel = createLabel(_("Pattern"))
         const patternEdit = new Gtk.Entry({ buffer: new Gtk.EntryBuffer() })
-
-        const useDefaultLocaleLabel = new Gtk.Label({
-            label: _("Use default locale") + ` (${Utils.getCurrentLocale()})`,
-            hexpand: true,
-            halign: Gtk.Align.START
-        })
         
-        const customLocaleLabel = new Gtk.Label({
-            label: _("Custom locale"),
-            hexpand: true,
-            halign: Gtk.Align.START            
-        })
-
+        const previewLabel = createLabel(_("Preview"))
+        const patternPreview = createLabel("")
+        
+        const useDefaultLocaleLabel = createLabel(_("Use default locale") + ` (${Utils.getCurrentLocale()})`)
+        const localeBox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, spacing: 30 })
+        const useDefaultLocaleEdit = new Gtk.Switch( { vexpand: false, valign: Gtk.Align.CENTER })
+        
         const customLocaleEdit = new Gtk.Entry({ buffer: new Gtk.EntryBuffer() })
+        localeBox.prepend(useDefaultLocaleEdit)
+        localeBox.append(customLocaleEdit)
         
-        const removeMessagesIndicatorLabel = new Gtk.Label({
-            label: _("Remove unread messages indicator"),
-            hexpand: true,
-            halign: Gtk.Align.START
-        })
+        const customLocaleLabel = createLabel(_("Custom locale"))
+        
+        
+        const removeMessagesIndicatorLabel = createLabel( _("Remove unread messages indicator"))
         const removeMessagesIndicatorEdit = new Gtk.Switch()
-
 
         addRow(patternLabel, previewLabel)
         addRow(patternEdit, patternPreview)
-        addRow(useDefaultLocaleLabel, useDefaultLocaleEdit)
-        addRow(customLocaleLabel, customLocaleEdit)
+        addRow(useDefaultLocaleLabel, localeBox)
+        //addRow(customLocaleLabel, customLocaleEdit)
         addRow(removeMessagesIndicatorLabel, removeMessagesIndicatorEdit)
         addRow(null, new Gtk.Separator())
 
@@ -170,16 +158,10 @@ class Preferences {
 
 
 <tt>\\n    </tt> - new line`)
-        let help1 = new Gtk.Label({
-            hexpand: true,
-            halign: Gtk.Align.START            
-        })
+        const help1 = createLabel("")
         help1.set_markup(markup_help1)
 
-        let help2 = new Gtk.Label({
-            hexpand: true,
-            halign: Gtk.Align.START            
-        })
+        const help2 = createLabel("")
         help2.set_markup(markup_help2)
         
         addRow(help1, help2)

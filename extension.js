@@ -43,6 +43,7 @@ class Extension {
         this._display.set_y_align(Clutter.ActorAlign.CENTER)
         this._display.text = "..."
         this._timerId = -1
+        this._settingsChangedId = null
         this._formatter = null
     }
 
@@ -90,6 +91,11 @@ class Extension {
         StatusArea.dateMenu.get_children()[0].insert_child_at_index(StatusArea.dateMenu._clockDisplay, 1);
         StatusArea.dateMenu.get_children()[0].remove_child(this._display);
         Mainloop.source_remove(this._timerId)
+        if (this._settingsChangedId) {
+            this._settings.disconnect(this._settingsChangedId);
+            this._settingsChangedId = null;
+        }
+        this._settings = null;
     }
 }
 

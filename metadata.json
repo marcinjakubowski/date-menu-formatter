@@ -1,8 +1,9 @@
 {
   "name": "Date Menu Formatter",
-  "description": "Allows customization of the date menu display",
+  "description": "Allows customization of the date display in the panel.\n\nMight be especially useful if you're using a horizontal panel which does not at all work well with the default date display.",
   "uuid": "date-menu-formatter@marcinjakubowski.github.com",
   "shell-version": [
-    "41"
-  ]
+    "41", "40"
+  ],
+  "version": 1
 }

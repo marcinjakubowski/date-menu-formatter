@@ -1,0 +1,8 @@
+{
+  "name": "Date Menu Formatter",
+  "description": "Allows customization of the date menu display",
+  "uuid": "date-menu-formatter@marcinjakubowski.github.com",
+  "shell-version": [
+    "41"
+  ]
+}

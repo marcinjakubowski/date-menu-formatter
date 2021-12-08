@@ -21,7 +21,6 @@
     https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator
     https://extensions.gnome.org/extension/779/clipboard-indicator/
 */
-const GObject = imports.gi.GObject;
 const Gtk = imports.gi.Gtk;
 const Gio = imports.gi.Gio;
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -31,8 +30,6 @@ const Utils = Me.imports.utils;
 
 const Gettext = imports.gettext;
 const _ = Gettext.domain('date-menu-formatter').gettext;
-
-var SettingsSchema = ExtensionUtils.getSettings();
 
 function init() {
     let localeDir = Me.dir.get_child('locale');
@@ -153,12 +150,13 @@ class Preferences {
         
         addRow(help1, help2)
 
-        SettingsSchema.bind(Utils.PrefFields.PATTERN, patternEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
-        SettingsSchema.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, useDefaultLocaleEdit, 'active', Gio.SettingsBindFlags.DEFAULT);
-        SettingsSchema.bind(Utils.PrefFields.CUSTOM_LOCALE, customLocaleEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
-        SettingsSchema.bind(Utils.PrefFields.REMOVE_MESSAGES_INDICATOR, removeMessagesIndicatorEdit, 'active', Gio.SettingsBindFlags.DEFAULT)
+        const settings = ExtensionUtils.getSettings();
+        settings.bind(Utils.PrefFields.PATTERN, patternEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
+        settings.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, useDefaultLocaleEdit, 'active', Gio.SettingsBindFlags.DEFAULT);
+        settings.bind(Utils.PrefFields.CUSTOM_LOCALE, customLocaleEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
+        settings.bind(Utils.PrefFields.REMOVE_MESSAGES_INDICATOR, removeMessagesIndicatorEdit, 'active', Gio.SettingsBindFlags.DEFAULT)
         const sensitivityBindFlags = Gio.SettingsBindFlags.GET | Gio.SettingsBindFlags.NO_SENSITIVITY | Gio.SettingsBindFlags.INVERT_BOOLEAN
-        SettingsSchema.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, customLocaleEdit, 'sensitive', sensitivityBindFlags)
+        settings.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, customLocaleEdit, 'sensitive', sensitivityBindFlags)
 
         useDefaultLocaleEdit.connect('state-set', this.generatePreview.bind(this))
         customLocaleEdit.buffer.connect_after('inserted-text', this.generatePreview.bind(this))

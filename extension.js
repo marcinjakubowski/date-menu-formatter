@@ -16,8 +16,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-const { Clutter, Gio, GLib, GObject, Meta, Shell, St } = imports.gi;
-
+const { Clutter, St } = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { SimpleDateFormat } = Me.imports.lib.SimpleDateFormat;

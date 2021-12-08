@@ -32,16 +32,7 @@ const Utils = Me.imports.utils;
 const Gettext = imports.gettext;
 const _ = Gettext.domain('date-menu-formatter').gettext;
 
-var Fields = {
-    PATTERN             : 'pattern',
-    USE_DEFAULT_LOCALE  : 'use-default-locale',
-    CUSTOM_LOCALE       : 'custom-locale',
-    REMOVE_MESSAGES_INDICATOR: 'remove-messages-indicator'
-};
-
-const SCHEMA_NAME = 'org.gnome.shell.extensions.date-menu-formatter';
-
-var SettingsSchema = ExtensionUtils.getSettings(SCHEMA_NAME);
+var SettingsSchema = ExtensionUtils.getSettings();
 
 function init() {
     let localeDir = Me.dir.get_child('locale');
@@ -108,16 +99,12 @@ class Preferences {
         localeBox.prepend(useDefaultLocaleEdit)
         localeBox.append(customLocaleEdit)
         
-        const customLocaleLabel = createLabel(_("Custom locale"))
-        
-        
         const removeMessagesIndicatorLabel = createLabel( _("Remove unread messages indicator"))
         const removeMessagesIndicatorEdit = new Gtk.Switch()
 
         addRow(patternLabel, previewLabel)
         addRow(patternEdit, patternPreview)
         addRow(useDefaultLocaleLabel, localeBox)
-        //addRow(customLocaleLabel, customLocaleEdit)
         addRow(removeMessagesIndicatorLabel, removeMessagesIndicatorEdit)
         addRow(null, new Gtk.Separator())
 
@@ -166,13 +153,12 @@ class Preferences {
         
         addRow(help1, help2)
 
-        SettingsSchema.bind(Fields.PATTERN, patternEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
-        SettingsSchema.bind(Fields.USE_DEFAULT_LOCALE, useDefaultLocaleEdit, 'active', Gio.SettingsBindFlags.DEFAULT);
-        SettingsSchema.bind(Fields.CUSTOM_LOCALE, customLocaleEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
-        SettingsSchema.bind(Fields.REMOVE_MESSAGES_INDICATOR, removeMessagesIndicatorEdit, 'active', Gio.SettingsBindFlags.DEFAULT)
+        SettingsSchema.bind(Utils.PrefFields.PATTERN, patternEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
+        SettingsSchema.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, useDefaultLocaleEdit, 'active', Gio.SettingsBindFlags.DEFAULT);
+        SettingsSchema.bind(Utils.PrefFields.CUSTOM_LOCALE, customLocaleEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
+        SettingsSchema.bind(Utils.PrefFields.REMOVE_MESSAGES_INDICATOR, removeMessagesIndicatorEdit, 'active', Gio.SettingsBindFlags.DEFAULT)
         const sensitivityBindFlags = Gio.SettingsBindFlags.GET | Gio.SettingsBindFlags.NO_SENSITIVITY | Gio.SettingsBindFlags.INVERT_BOOLEAN
-        SettingsSchema.bind(Fields.USE_DEFAULT_LOCALE, customLocaleEdit, 'sensitive', sensitivityBindFlags)
-        SettingsSchema.bind(Fields.USE_DEFAULT_LOCALE, customLocaleLabel, 'sensitive', sensitivityBindFlags)
+        SettingsSchema.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, customLocaleEdit, 'sensitive', sensitivityBindFlags)
 
         useDefaultLocaleEdit.connect('state-set', this.generatePreview.bind(this))
         customLocaleEdit.buffer.connect_after('inserted-text', this.generatePreview.bind(this))

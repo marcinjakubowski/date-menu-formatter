@@ -23,10 +23,8 @@ const Me = ExtensionUtils.getCurrentExtension();
 const { SimpleDateFormat } = Me.imports.lib.SimpleDateFormat;
 const Utils = Me.imports.utils;
 const Mainloop = imports.mainloop;
-const Prefs = Me.imports.prefs;
 const Main = imports.ui.main;
 const StatusArea = Main.panel.statusArea
-const Lang = imports.lang;
 
 
 let PATTERN = "";
@@ -49,16 +47,16 @@ class Extension {
     }
 
     _loadSettings() {
-        this._settings = Prefs.SettingsSchema;
+        this._settings = ExtensionUtils.getSettings();
         this._settingsChangedId = this._settings.connect('changed', this._onSettingsChange.bind(this));
         this._onSettingsChange()
     }
 
     _fetchSettings() {
-        PATTERN = Utils.convertToPattern(this._settings.get_string(Prefs.Fields.PATTERN));
-        REMOVE_MESSAGES_INDICATOR = this._settings.get_boolean(Prefs.Fields.REMOVE_MESSAGES_INDICATOR);
-        USE_DEFAULT_LOCALE = this._settings.get_boolean(Prefs.Fields.USE_DEFAULT_LOCALE);
-        CUSTOM_LOCALE = this._settings.get_string(Prefs.Fields.CUSTOM_LOCALE);
+        PATTERN = Utils.convertToPattern(this._settings.get_string(Utils.PrefFields.PATTERN));
+        REMOVE_MESSAGES_INDICATOR = this._settings.get_boolean(Utils.PrefFields.REMOVE_MESSAGES_INDICATOR);
+        USE_DEFAULT_LOCALE = this._settings.get_boolean(Utils.PrefFields.USE_DEFAULT_LOCALE);
+        CUSTOM_LOCALE = this._settings.get_string(Utils.PrefFields.CUSTOM_LOCALE);
         const locale = USE_DEFAULT_LOCALE ? Utils.getCurrentLocale() : CUSTOM_LOCALE
         this._formatter = new SimpleDateFormat(locale)
     }

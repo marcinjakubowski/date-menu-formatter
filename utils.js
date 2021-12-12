@@ -2,6 +2,7 @@ var PrefFields = {
     PATTERN             : 'pattern',
     USE_DEFAULT_LOCALE  : 'use-default-locale',
     CUSTOM_LOCALE       : 'custom-locale',
+    FONT_SIZE           : 'font-size',
     REMOVE_MESSAGES_INDICATOR: 'remove-messages-indicator'
 };
 

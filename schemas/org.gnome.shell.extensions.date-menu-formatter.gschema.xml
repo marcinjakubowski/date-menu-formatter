@@ -22,5 +22,10 @@
         <summary>Should unread messages indicator be removed</summary>
         <description></description>
     </key>    
+    <key type="i" name="font-size">
+        <default>10</default>
+        <summary>Font size</summary>
+        <description></description>
+    </key>    
   </schema>
 </schemalist>

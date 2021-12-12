@@ -99,10 +99,26 @@ class Preferences {
         const removeMessagesIndicatorLabel = createLabel( _("Remove unread messages indicator"))
         const removeMessagesIndicatorEdit = new Gtk.Switch()
 
+        const fontSizeLabel = createLabel(_("Font size"))
+        const fontSizeEdit = new Gtk.SpinButton({
+            adjustment: new Gtk.Adjustment({
+                lower: 4,
+                upper: 30,
+                step_increment: 1
+            })
+        })
+
+        fontSizeEdit.connect('output', function (spin) {
+            spin.text = `${spin.value} pt`
+            return true
+        }.bind(this))
+        
+
         addRow(patternLabel, previewLabel)
         addRow(patternEdit, patternPreview)
         addRow(useDefaultLocaleLabel, localeBox)
         addRow(removeMessagesIndicatorLabel, removeMessagesIndicatorEdit)
+        addRow(fontSizeLabel, fontSizeEdit);
         addRow(null, new Gtk.Separator())
 
 
@@ -155,6 +171,7 @@ class Preferences {
         settings.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, useDefaultLocaleEdit, 'active', Gio.SettingsBindFlags.DEFAULT);
         settings.bind(Utils.PrefFields.CUSTOM_LOCALE, customLocaleEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
         settings.bind(Utils.PrefFields.REMOVE_MESSAGES_INDICATOR, removeMessagesIndicatorEdit, 'active', Gio.SettingsBindFlags.DEFAULT)
+        settings.bind(Utils.PrefFields.FONT_SIZE, fontSizeEdit, 'value', Gio.SettingsBindFlags.DEFAULT);
         const sensitivityBindFlags = Gio.SettingsBindFlags.GET | Gio.SettingsBindFlags.NO_SENSITIVITY | Gio.SettingsBindFlags.INVERT_BOOLEAN
         settings.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, customLocaleEdit, 'sensitive', sensitivityBindFlags)
 

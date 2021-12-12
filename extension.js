@@ -31,7 +31,7 @@ let USE_DEFAULT_LOCALE = true
 let CUSTOM_LOCALE = ""
 let LOCALE = Utils.getCurrentLocale()
 let REMOVE_MESSAGES_INDICATOR = false
-
+let FONT_SIZE = 1;
 
 class Extension {
     constructor() {
@@ -56,6 +56,7 @@ class Extension {
         REMOVE_MESSAGES_INDICATOR = this._settings.get_boolean(Utils.PrefFields.REMOVE_MESSAGES_INDICATOR);
         USE_DEFAULT_LOCALE = this._settings.get_boolean(Utils.PrefFields.USE_DEFAULT_LOCALE);
         CUSTOM_LOCALE = this._settings.get_string(Utils.PrefFields.CUSTOM_LOCALE);
+        FONT_SIZE = this._settings.get_int(Utils.PrefFields.FONT_SIZE);
         const locale = USE_DEFAULT_LOCALE ? Utils.getCurrentLocale() : CUSTOM_LOCALE
         this._formatter = new SimpleDateFormat(locale)
     }
@@ -70,6 +71,7 @@ class Extension {
     _onSettingsChange() {
         this._fetchSettings();
         REMOVE_MESSAGES_INDICATOR ? this._removeIndicator() : this._restoreIndicator()
+        this._display.style = `font-size: ${FONT_SIZE}pt; text-align: center`
     }    
 
     enable() {
@@ -78,7 +80,6 @@ class Extension {
         StatusArea.dateMenu.get_children()[0].remove_child(StatusArea.dateMenu._clockDisplay);
         this._timerId = Mainloop.timeout_add_seconds(1, this.update.bind(this))
         this.update()
-
     }
 
     update() {

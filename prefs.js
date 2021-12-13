@@ -148,8 +148,8 @@ class Preferences {
 
 <tt>h     </tt> - hour (1-12)
 <tt>hh    </tt> - hour (1-12, padded)
-<tt>H     </tt> - hour (0-23)
-<tt>HH    </tt> - hour (00-23, padded)
+<tt>k     </tt> - hour (0-23)
+<tt>kk    </tt> - hour (00-23, padded)
 
 <tt>m     </tt> - minute
 <tt>mm    </tt> - minute (padded)

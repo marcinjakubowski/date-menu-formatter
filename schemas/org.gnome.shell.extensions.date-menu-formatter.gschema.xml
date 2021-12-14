@@ -22,6 +22,11 @@
         <summary>Should unread messages indicator be removed</summary>
         <description></description>
     </key>    
+    <key type="b" name="apply-all-panels">
+        <default>false</default>
+        <summary>Should extension modify all Dash To Panel panels</summary>
+        <description></description>
+    </key>        
     <key type="i" name="font-size">
         <default>10</default>
         <summary>Font size</summary>

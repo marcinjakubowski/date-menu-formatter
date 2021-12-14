@@ -3,6 +3,7 @@ var PrefFields = {
     USE_DEFAULT_LOCALE  : 'use-default-locale',
     CUSTOM_LOCALE       : 'custom-locale',
     FONT_SIZE           : 'font-size',
+    APPLY_ALL_PANELS    : 'apply-all-panels',
     REMOVE_MESSAGES_INDICATOR: 'remove-messages-indicator'
 };
 

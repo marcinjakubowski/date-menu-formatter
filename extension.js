@@ -23,7 +23,7 @@ const { SimpleDateFormat } = Me.imports.lib.SimpleDateFormat;
 const Utils = Me.imports.utils;
 const Mainloop = imports.mainloop;
 const Main = imports.ui.main;
-const StatusArea = Main.panel.statusArea
+const MainPanel = Main.panel
 
 
 let PATTERN = "";
@@ -31,18 +31,24 @@ let USE_DEFAULT_LOCALE = true
 let CUSTOM_LOCALE = ""
 let LOCALE = Utils.getCurrentLocale()
 let REMOVE_MESSAGES_INDICATOR = false
+let APPLY_ALL_PANELS = false;
 let FONT_SIZE = 1;
 
 class Extension {
     constructor() {
-        // there has to be a better way
-        this._display = new St.Label({ style: 'font-size: 9pt; text-align: center' })
-        this._display.set_x_align(Clutter.ActorAlign.CENTER)
-        this._display.set_y_align(Clutter.ActorAlign.CENTER)
-        this._display.text = "..."
-        this._timerId = -1
-        this._settingsChangedId = null
-        this._formatter = null
+        this._displays = [this._createDisplay()]
+        this._timerId = -1;
+        this._settingsChangedId = null;
+        this._dashToPanelConnection = null;
+        this._formatter = null;
+    }
+
+    _createDisplay() {
+        const display = new St.Label({ style: 'font-size: 9pt; text-align: center' })
+        display.set_x_align(Clutter.ActorAlign.CENTER)
+        display.set_y_align(Clutter.ActorAlign.CENTER)
+        display.text = "..."
+        return display
     }
 
     _loadSettings() {
@@ -56,39 +62,93 @@ class Extension {
         REMOVE_MESSAGES_INDICATOR = this._settings.get_boolean(Utils.PrefFields.REMOVE_MESSAGES_INDICATOR);
         USE_DEFAULT_LOCALE = this._settings.get_boolean(Utils.PrefFields.USE_DEFAULT_LOCALE);
         CUSTOM_LOCALE = this._settings.get_string(Utils.PrefFields.CUSTOM_LOCALE);
+        APPLY_ALL_PANELS = this._settings.get_boolean(Utils.PrefFields.APPLY_ALL_PANELS);
         FONT_SIZE = this._settings.get_int(Utils.PrefFields.FONT_SIZE);
         const locale = USE_DEFAULT_LOCALE ? Utils.getCurrentLocale() : CUSTOM_LOCALE
         this._formatter = new SimpleDateFormat(locale)
     }
 
-    _removeIndicator() {
-        StatusArea.dateMenu.get_children()[0].remove_child(StatusArea.dateMenu._indicator);
+    _removeIndicator(panels) {
+        const removeIndicator = (panel) => panel.statusArea.dateMenu.get_children()[0].remove_child(panel.statusArea.dateMenu._indicator);
+        panels.forEach(removeIndicator);
     }
-    _restoreIndicator() {
-        StatusArea.dateMenu.get_children()[0].insert_child_at_index(StatusArea.dateMenu._indicator, 2);
+    
+    _restoreIndicator(panels) {
+        const restoreIndicator = (panel) => panel.statusArea.dateMenu.get_children()[0].insert_child_at_index(panel.statusArea.dateMenu._indicator, 2);
+        panels.forEach(restoreIndicator);
+    }
+
+    // returns affected and unaffected panels based on settings and Dash To Panel availability
+    _getPanels() {
+        if (!global.dashToPanel)
+            return [[MainPanel], []]
+        else if (APPLY_ALL_PANELS) {
+            return [global.dashToPanel.panels, []]
+        }
+        else {
+            return [[MainPanel], global.dashToPanel.panels.filter(panel => panel.statusArea.dateMenu != MainPanel.statusArea.dateMenu)]
+        }
+    }
+
+    _enableOn(panels) {
+        panels.forEach((panel, idx) => {
+            const dateMenuButton = panel.statusArea.dateMenu.get_children()[0];
+            dateMenuButton.insert_child_at_index(this._displays[idx], 1);
+            dateMenuButton.dateMenuFormatterDisplay = this._displays[idx]
+            dateMenuButton.remove_child(panel.statusArea.dateMenu._clockDisplay);
+        });            
+    }
+
+    _disableOn(panels) {
+        panels.forEach((panel, idx) => {
+            const dateMenuButton = panel.statusArea.dateMenu.get_children()[0];
+            dateMenuButton.insert_child_at_index(panel.statusArea.dateMenu._clockDisplay, 1);
+            if (dateMenuButton.dateMenuFormatterDisplay) {
+                dateMenuButton.remove_child(dateMenuButton.dateMenuFormatterDisplay);
+            }
+        });
     }
 
     _onSettingsChange() {
         this._fetchSettings();
-        REMOVE_MESSAGES_INDICATOR ? this._removeIndicator() : this._restoreIndicator()
-        this._display.style = `font-size: ${FONT_SIZE}pt; text-align: center`
+        if (global.dashToPanel && this._displays.length < global.dashToPanel.panels.length) {
+            const missingPanels = global.dashToPanel.panels.length - this._displays.length
+            this._displays = [...this._displays, ...Array.from({length: missingPanels}, () => this._createDisplay())]
+        }
+
+        const [affectedPanels, unaffectedPanels] = this._getPanels()
+        if (REMOVE_MESSAGES_INDICATOR) {
+            this._removeIndicator(affectedPanels);
+            this._restoreIndicator(unaffectedPanels);
+        }
+        else {
+            this._restoreIndicator([...affectedPanels, ...unaffectedPanels]);
+        }
+        this._enableOn(affectedPanels);
+        this._disableOn(unaffectedPanels);
+        this._displays.forEach(display => display.style = `font-size: ${FONT_SIZE}pt; text-align: center`);
     }    
 
     enable() {
+        if (global.dashToPanel) {
+            this._dashToPanelConnection = global.dashToPanel.connect('panels-created', () => this._onSettingsChange());
+        }
+
+
         this._loadSettings();
-        StatusArea.dateMenu.get_children()[0].insert_child_at_index(this._display, 1);
-        StatusArea.dateMenu.get_children()[0].remove_child(StatusArea.dateMenu._clockDisplay);
+        const [affectedPanels, _] = this._getPanels();
+        this._enableOn(affectedPanels);
         this._timerId = Mainloop.timeout_add_seconds(1, this.update.bind(this))
         this.update()
     }
 
     update() {
         try {
-            this._display.text = Utils.convertFromPattern(this._formatter.format(PATTERN, new Date()))
+            this._displays.forEach(display => display.text = Utils.convertFromPattern(this._formatter.format(PATTERN, new Date())));
         }
         // if there is an exception during formatting, use the default display's text
         catch (e) {
-            this._display.text = StatusArea.dateMenu._clockDisplay.text
+            this._displays.forEach(display => display.text = MainPanel.statusArea.dateMenu._clockDisplay.text)
             log("DateMenuFormatter: " + e.message)
 
         }
@@ -96,13 +156,18 @@ class Extension {
     }
 
     disable() {
-        StatusArea.dateMenu.get_children()[0].insert_child_at_index(StatusArea.dateMenu._clockDisplay, 1);
-        StatusArea.dateMenu.get_children()[0].remove_child(this._display);
-        this._restoreIndicator()
-        Mainloop.source_remove(this._timerId)
+        const [affectedPanels, unaffectedPanels] = this._getPanels()
+        const allPanels = [...affectedPanels, ...unaffectedPanels]
+        this._disableOn(allPanels);
+        this._restoreIndicator(allPanels);
+        Mainloop.source_remove(this._timerId);
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = null;
+        }
+        if (this._dashToPanelConnection) {
+            global.dashToPanel.disconnect(this._dashToPanelConnection);
+            this._dashToPanelConnection = null;
         }
         this._settings = null;
     }

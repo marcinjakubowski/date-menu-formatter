@@ -112,12 +112,17 @@ class Preferences {
             spin.text = `${spin.value} pt`
             return true
         }.bind(this))
+
+
+        const applyAllPanelsLabel = createLabel( _("Apply to all panels (Dash to Panel)"))
+        const applyAllPanelsEdit = new Gtk.Switch()
         
 
         addRow(patternLabel, previewLabel)
         addRow(patternEdit, patternPreview)
         addRow(useDefaultLocaleLabel, localeBox)
         addRow(removeMessagesIndicatorLabel, removeMessagesIndicatorEdit)
+        addRow(applyAllPanelsLabel, applyAllPanelsEdit)
         addRow(fontSizeLabel, fontSizeEdit);
         addRow(null, new Gtk.Separator())
 
@@ -171,6 +176,7 @@ class Preferences {
         settings.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, useDefaultLocaleEdit, 'active', Gio.SettingsBindFlags.DEFAULT);
         settings.bind(Utils.PrefFields.CUSTOM_LOCALE, customLocaleEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
         settings.bind(Utils.PrefFields.REMOVE_MESSAGES_INDICATOR, removeMessagesIndicatorEdit, 'active', Gio.SettingsBindFlags.DEFAULT)
+        settings.bind(Utils.PrefFields.APPLY_ALL_PANELS, applyAllPanelsEdit, 'active', Gio.SettingsBindFlags.DEFAULT);
         settings.bind(Utils.PrefFields.FONT_SIZE, fontSizeEdit, 'value', Gio.SettingsBindFlags.DEFAULT);
         const sensitivityBindFlags = Gio.SettingsBindFlags.GET | Gio.SettingsBindFlags.NO_SENSITIVITY | Gio.SettingsBindFlags.INVERT_BOOLEAN
         settings.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, customLocaleEdit, 'sensitive', sensitivityBindFlags)

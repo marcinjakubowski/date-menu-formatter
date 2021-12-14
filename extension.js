@@ -48,17 +48,17 @@ class Extension {
     }
 
     _createDisplay() {
-        const display = new St.Label({ style: 'font-size: 9pt; text-align: center' })
-        display.set_x_align(Clutter.ActorAlign.CENTER)
-        display.set_y_align(Clutter.ActorAlign.CENTER)
-        display.text = "..."
-        return display
+        const display = new St.Label({ style: 'font-size: 9pt; text-align: center' });
+        display.set_x_align(Clutter.ActorAlign.CENTER);
+        display.set_y_align(Clutter.ActorAlign.CENTER);
+        display.text = "...";
+        return display;
     }
 
     _loadSettings() {
         this._settings = ExtensionUtils.getSettings();
         this._settingsChangedId = this._settings.connect('changed', this._onSettingsChange.bind(this));
-        this._onSettingsChange()
+        this._onSettingsChange();
     }
 
     _fetchSettings() {
@@ -73,13 +73,17 @@ class Extension {
     }
 
     _removeIndicator(panels) {
-        const removeIndicator = (panel) => _getDateMenuButton(panel).remove_child(panel.statusArea.dateMenu._indicator);
-        panels.forEach(removeIndicator);
+        panels.forEach(panel => {
+            if (panel.statusArea.dateMenu._indicator.get_parent())
+                _getDateMenuButton(panel).remove_child(panel.statusArea.dateMenu._indicator);
+        });
     }
     
     _restoreIndicator(panels) {
-        const restoreIndicator = (panel) => _getDateMenuButton(panel).insert_child_at_index(panel.statusArea.dateMenu._indicator, 2);
-        panels.forEach(restoreIndicator);
+        panels.forEach(panel => {
+            if (!panel.statusArea.dateMenu._indicator.get_parent())
+                _getDateMenuButton(panel).insert_child_at_index(panel.statusArea.dateMenu._indicator, 2);
+        });
     }
 
     // returns affected and unaffected panels based on settings and Dash To Panel availability
@@ -98,17 +102,23 @@ class Extension {
     _enableOn(panels) {
         panels.forEach((panel, idx) => {
             const dateMenuButton = _getDateMenuButton(panel);
-            dateMenuButton.insert_child_at_index(this._displays[idx], 1);
-            dateMenuButton.dateMenuFormatterDisplay = this._displays[idx]
-            dateMenuButton.remove_child(panel.statusArea.dateMenu._clockDisplay);
+            if (!this._displays[idx].get_parent()) {
+                dateMenuButton.insert_child_at_index(this._displays[idx], 1);
+                dateMenuButton.dateMenuFormatterDisplay = this._displays[idx];
+            }
+            if (panel.statusArea.dateMenu._clockDisplay.get_parent()) {
+                dateMenuButton.remove_child(panel.statusArea.dateMenu._clockDisplay);
+            }
         });            
     }
 
     _disableOn(panels) {
         panels.forEach((panel) => {
             const dateMenuButton = _getDateMenuButton(panel);
-            dateMenuButton.insert_child_at_index(panel.statusArea.dateMenu._clockDisplay, 1);
-            if (dateMenuButton.dateMenuFormatterDisplay) {
+            if (!panel.statusArea.dateMenu._clockDisplay.get_parent()) {
+                dateMenuButton.insert_child_at_index(panel.statusArea.dateMenu._clockDisplay, 1);
+            }
+            if (dateMenuButton.dateMenuFormatterDisplay && dateMenuButton.dateMenuFormatterDisplay.get_parent()) {
                 dateMenuButton.remove_child(dateMenuButton.dateMenuFormatterDisplay);
             }
         });
@@ -122,7 +132,7 @@ class Extension {
             this._displays = [...this._displays, ...Array.from({length: missingPanels}, () => this._createDisplay())];
         }
 
-        const [affectedPanels, unaffectedPanels] = this._getPanels()
+        const [affectedPanels, unaffectedPanels] = this._getPanels();
         if (REMOVE_MESSAGES_INDICATOR) {
             this._removeIndicator(affectedPanels);
             this._restoreIndicator(unaffectedPanels);

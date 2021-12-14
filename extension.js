@@ -34,6 +34,10 @@ let REMOVE_MESSAGES_INDICATOR = false
 let APPLY_ALL_PANELS = false;
 let FONT_SIZE = 1;
 
+function _getDateMenuButton(panel) {
+    return panel.statusArea.dateMenu.get_children()[0];
+}
+
 class Extension {
     constructor() {
         this._displays = [this._createDisplay()]
@@ -69,12 +73,12 @@ class Extension {
     }
 
     _removeIndicator(panels) {
-        const removeIndicator = (panel) => panel.statusArea.dateMenu.get_children()[0].remove_child(panel.statusArea.dateMenu._indicator);
+        const removeIndicator = (panel) => _getDateMenuButton(panel).remove_child(panel.statusArea.dateMenu._indicator);
         panels.forEach(removeIndicator);
     }
     
     _restoreIndicator(panels) {
-        const restoreIndicator = (panel) => panel.statusArea.dateMenu.get_children()[0].insert_child_at_index(panel.statusArea.dateMenu._indicator, 2);
+        const restoreIndicator = (panel) => _getDateMenuButton(panel).insert_child_at_index(panel.statusArea.dateMenu._indicator, 2);
         panels.forEach(restoreIndicator);
     }
 
@@ -86,13 +90,14 @@ class Extension {
             return [global.dashToPanel.panels, []]
         }
         else {
+            // MainPanel is not the same as primary Dash To Panel panel, but their dateMenus are the same
             return [[MainPanel], global.dashToPanel.panels.filter(panel => panel.statusArea.dateMenu != MainPanel.statusArea.dateMenu)]
         }
     }
 
     _enableOn(panels) {
         panels.forEach((panel, idx) => {
-            const dateMenuButton = panel.statusArea.dateMenu.get_children()[0];
+            const dateMenuButton = _getDateMenuButton(panel);
             dateMenuButton.insert_child_at_index(this._displays[idx], 1);
             dateMenuButton.dateMenuFormatterDisplay = this._displays[idx]
             dateMenuButton.remove_child(panel.statusArea.dateMenu._clockDisplay);
@@ -100,8 +105,8 @@ class Extension {
     }
 
     _disableOn(panels) {
-        panels.forEach((panel, idx) => {
-            const dateMenuButton = panel.statusArea.dateMenu.get_children()[0];
+        panels.forEach((panel) => {
+            const dateMenuButton = _getDateMenuButton(panel);
             dateMenuButton.insert_child_at_index(panel.statusArea.dateMenu._clockDisplay, 1);
             if (dateMenuButton.dateMenuFormatterDisplay) {
                 dateMenuButton.remove_child(dateMenuButton.dateMenuFormatterDisplay);
@@ -111,9 +116,10 @@ class Extension {
 
     _onSettingsChange() {
         this._fetchSettings();
+        // does Dash to Panel support more than 2 panels? better to be safe than sorry
         if (global.dashToPanel && this._displays.length < global.dashToPanel.panels.length) {
-            const missingPanels = global.dashToPanel.panels.length - this._displays.length
-            this._displays = [...this._displays, ...Array.from({length: missingPanels}, () => this._createDisplay())]
+            const missingPanels = global.dashToPanel.panels.length - this._displays.length;
+            this._displays = [...this._displays, ...Array.from({length: missingPanels}, () => this._createDisplay())];
         }
 
         const [affectedPanels, unaffectedPanels] = this._getPanels()
@@ -133,8 +139,6 @@ class Extension {
         if (global.dashToPanel) {
             this._dashToPanelConnection = global.dashToPanel.connect('panels-created', () => this._onSettingsChange());
         }
-
-
         this._loadSettings();
         const [affectedPanels, _] = this._getPanels();
         this._enableOn(affectedPanels);
@@ -143,12 +147,13 @@ class Extension {
     }
 
     update() {
+        const setText = (text) => this._displays.forEach(display => display.text = text);
         try {
-            this._displays.forEach(display => display.text = Utils.convertFromPattern(this._formatter.format(PATTERN, new Date())));
+            setText(Utils.convertFromPattern(this._formatter.format(PATTERN, new Date())));
         }
         // if there is an exception during formatting, use the default display's text
         catch (e) {
-            this._displays.forEach(display => display.text = MainPanel.statusArea.dateMenu._clockDisplay.text)
+            setText(MainPanel.statusArea.dateMenu._clockDisplay.text);
             log("DateMenuFormatter: " + e.message)
 
         }

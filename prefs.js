@@ -37,6 +37,16 @@ function init() {
         Gettext.bindtextdomain('date-menu-formatter', localeDir.get_path());
 }
 
+function addBox(box, child) {
+    if (imports.gi.versions.Gtk.startsWith("3")) {
+        box.add(child);
+    }
+    else {
+        box.append(child);
+    }
+}
+
+
 class Preferences {
     constructor() {
         this.main = new Gtk.Grid({
@@ -57,7 +67,7 @@ class Preferences {
 
                 if (input instanceof Gtk.Switch) {
                     inputWidget = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL,});
-                    inputWidget.append(input);
+                    addBox(inputWidget, input);
                 }
 
                 if (label) {
@@ -93,8 +103,8 @@ class Preferences {
         const useDefaultLocaleEdit = new Gtk.Switch( { vexpand: false, valign: Gtk.Align.CENTER })
         
         const customLocaleEdit = new Gtk.Entry({ buffer: new Gtk.EntryBuffer() })
-        localeBox.prepend(useDefaultLocaleEdit)
-        localeBox.append(customLocaleEdit)
+        addBox(localeBox, useDefaultLocaleEdit);
+        addBox(localeBox, customLocaleEdit);
         
         const removeMessagesIndicatorLabel = createLabel( _("Remove unread messages indicator"))
         const removeMessagesIndicatorEdit = new Gtk.Switch()
@@ -217,15 +227,15 @@ class Preferences {
             this._preview.label = ""
             this._previewErrorCount = 0
         }
-
     }
-
-
-    
 };
 
 function buildPrefsWidget() {
+    let frame = new Gtk.Box();
     let widget = new Preferences();
-    return widget.main;
+    addBox(frame, widget.main);
+    if (frame.show_all)
+	    frame.show_all();
+    return frame;
 }
 

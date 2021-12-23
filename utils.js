@@ -12,9 +12,9 @@ function getCurrentLocale() {
 }
 
 function convertToPattern(str) {
-    return '#' + str.replaceAll("\\n", "\n").replaceAll("''", ">`<")
+    return '#' + str.replace(new RegExp("\\\\n", "g"), "\n").replace(new RegExp("''", "g"), ">`<")
 }
 
 function convertFromPattern(str) {
-    return str.replaceAll('>`<', "'")
+    return str.replace(new RegExp('>`<', "g"), "'")
 }

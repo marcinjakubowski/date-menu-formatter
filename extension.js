@@ -48,9 +48,12 @@ class Extension {
     }
 
     _createDisplay() {
-        const display = new St.Label({ style: 'font-size: 9pt; text-align: center' });
-        display.set_x_align(Clutter.ActorAlign.CENTER);
-        display.set_y_align(Clutter.ActorAlign.CENTER);
+        const display = new St.Label({ style: 'font-size: 9pt; text-align: center',
+                                       style_class: 'clock'});
+        display.set_x_align(Clutter.ActorAlign.FILL);
+        display.set_y_align(Clutter.ActorAlign.FILL);
+        display.first_child.set_x_align(Clutter.ActorAlign.CENTER);
+        display.first_child.set_y_align(Clutter.ActorAlign.CENTER);
         display.text = "...";
         return display;
     }
@@ -78,7 +81,7 @@ class Extension {
                 _getDateMenuButton(panel).remove_child(panel.statusArea.dateMenu._indicator);
         });
     }
-    
+
     _restoreIndicator(panels) {
         panels.forEach(panel => {
             if (!panel.statusArea.dateMenu._indicator.get_parent())
@@ -109,7 +112,7 @@ class Extension {
             if (panel.statusArea.dateMenu._clockDisplay.get_parent()) {
                 dateMenuButton.remove_child(panel.statusArea.dateMenu._clockDisplay);
             }
-        });            
+        });
     }
 
     _disableOn(panels) {
@@ -143,7 +146,7 @@ class Extension {
         this._enableOn(affectedPanels);
         this._disableOn(unaffectedPanels);
         this._displays.forEach(display => display.style = `font-size: ${FONT_SIZE}pt; text-align: center`);
-    }    
+    }
 
     enable() {
         if (global.dashToPanel) {

@@ -48,11 +48,14 @@ class Extension {
     }
 
     _createDisplay() {
-        const display = new St.Label({ style: 'font-size: 9pt; text-align: center' });
-        display.set_x_align(Clutter.ActorAlign.CENTER);
-        display.set_y_align(Clutter.ActorAlign.CENTER);
-        display.text = "...";
-        return display;
+        const display = new St.Label({
+          style_class: 'clock',
+          style: 'font-size: 9pt; text-align: center',
+        })
+        display.clutter_text.x_align = Clutter.ActorAlign.CENTER
+        display.clutter_text.y_align = Clutter.ActorAlign.CENTER
+        display.text = '...'
+        return display
     }
 
     _loadSettings() {

@@ -1,11 +1,11 @@
 {
   "name": "Date Menu Formatter",
-  "description": "Allows customization of the date display in the panel.\n\nMight be especially useful if you're using a horizontal panel which does not at all work well with the default date display.\n\nCHANGELOG\nVersion 5: added support for multiple Dash To Panel panels\nVersion 6: fixed issues on earlier Gnome Shell versions",
+  "description": "Allows customization of the date display in the panel.\n\nMight be especially useful if you're using a horizontal panel which does not at all work well with the default date display.\n\nCHANGELOG\nVersion 5: added support for multiple Dash To Panel panels\nVersion 6: fixed issues on earlier Gnome Shell versions\nVersion 10: fixed clock hover style (by bomdia)",
   "uuid": "date-menu-formatter@marcinjakubowski.github.com",
   "shell-version": [
-    "43", "42", "41", "40"
+    "44", "43", "42", "41", "40"
   ],
-  "version": 9,
+  "version": 10,
   "settings-schema": "org.gnome.shell.extensions.date-menu-formatter",
   "url": "https://github.com/marcinjakubowski/date-menu-formatter"
 }

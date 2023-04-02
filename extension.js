@@ -89,16 +89,25 @@ class Extension {
         });
     }
 
-    // returns affected and unaffected panels based on settings and Dash To Panel availability
+    // returns affected and unaffected panels based on settings and Dash To Panel / Multi Monitors Add-On availability
     _getPanels() {
-        if (!global.dashToPanel)
+        if (!global.dashToPanel && !Main.mmPanel)
             return [[MainPanel], []]
         else if (APPLY_ALL_PANELS) {
-            return [global.dashToPanel.panels, []]
+            if(global.dashToPanel){
+                return [global.dashToPanel.panels, []]
+            }
+            return [[MainPanel,...Main.mmPanel], []]
         }
         else {
-            // MainPanel is not the same as primary Dash To Panel panel, but their dateMenus are the same
-            return [[MainPanel], global.dashToPanel.panels.filter(panel => panel.statusArea.dateMenu != MainPanel.statusArea.dateMenu)]
+            // MainPanel is not the same as primary Dash To Panel / Multi Monitors Add-On panel, but their dateMenus are the same
+            let extraPanels = []
+            if(global.dashToPanel){
+                extraPanels = global.dashToPanel.panels
+            } else {
+                extraPanels = Main.mmPanel
+            }
+            return [[MainPanel], extraPanels.filter(panel => panel.statusArea.dateMenu != MainPanel.statusArea.dateMenu)]
         }
     }
 
@@ -129,19 +138,20 @@ class Extension {
 
     _onSettingsChange() {
         this._fetchSettings();
-        // does Dash to Panel support more than 2 panels? better to be safe than sorry
-        if (global.dashToPanel && this._displays.length < global.dashToPanel.panels.length) {
-            const missingPanels = global.dashToPanel.panels.length - this._displays.length;
+        // does Dash to Panel / Multi Monitors Add-On support more than 2 panels? better to be safe than sorry
+        const [affectedPanels, unaffectedPanels] = this._getPanels();
+        const allPanels = [...affectedPanels, ...unaffectedPanels]
+        if ((global.dashToPanel|| Main.mmPanel) && this._displays.length < allPanels.length) {
+            const missingPanels = allPanels.length - this._displays.length;
             this._displays = [...this._displays, ...Array.from({length: missingPanels}, () => this._createDisplay())];
         }
 
-        const [affectedPanels, unaffectedPanels] = this._getPanels();
         if (REMOVE_MESSAGES_INDICATOR) {
             this._removeIndicator(affectedPanels);
             this._restoreIndicator(unaffectedPanels);
         }
         else {
-            this._restoreIndicator([...affectedPanels, ...unaffectedPanels]);
+            this._restoreIndicator(allPanels);
         }
         this._enableOn(affectedPanels);
         this._disableOn(unaffectedPanels);
@@ -151,6 +161,8 @@ class Extension {
     enable() {
         if (global.dashToPanel) {
             this._dashToPanelConnection = global.dashToPanel.connect('panels-created', () => this._onSettingsChange());
+        } else if (Main.mmPanel) {
+            this._dashToPanelConnection = Main.layoutManager.connect('monitors-changed', () => this._onSettingsChange());
         }
         this._loadSettings();
         const [affectedPanels, _] = this._getPanels();

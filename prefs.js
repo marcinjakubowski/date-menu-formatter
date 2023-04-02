@@ -124,7 +124,7 @@ class Preferences {
         }.bind(this))
 
 
-        const applyAllPanelsLabel = createLabel( _("Apply to all panels (Dash to Panel)"))
+        const applyAllPanelsLabel = createLabel( _("Apply to all panels (Dash to Panel / Multi Monitors Add-On)"))
         const applyAllPanelsEdit = new Gtk.Switch()
         
 

@@ -5,7 +5,7 @@
   "shell-version": [
     "44", "43", "42", "41", "40"
   ],
-  "version": 10,
+  "version": 11,
   "settings-schema": "org.gnome.shell.extensions.date-menu-formatter",
   "url": "https://github.com/marcinjakubowski/date-menu-formatter"
 }

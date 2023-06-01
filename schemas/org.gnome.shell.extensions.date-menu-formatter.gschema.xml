@@ -20,6 +20,16 @@
         <default>true</default>
         <summary>Should default system locale be used</summary>
         <description></description>
+    </key>
+    <key type="s" name="custom-calendar">
+        <default>""</default>
+        <summary>Custom Calendar</summary>
+        <description></description>
+    </key>
+    <key type="b" name="use-default-calendar">
+        <default>true</default>
+        <summary>Should default calendar be used</summary>
+        <description></description>
     </key>   
     <key type="s" name="custom-timezone">
         <default>""</default>

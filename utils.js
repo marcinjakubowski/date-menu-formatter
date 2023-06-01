@@ -7,6 +7,8 @@ var PrefFields = {
   UPDATE_LEVEL: 'update-level',
   USE_DEFAULT_LOCALE: 'use-default-locale',
   CUSTOM_LOCALE: 'custom-locale',
+  USE_DEFAULT_CALENDAR: 'use-default-calendar',
+  CUSTOM_CALENDAR: 'custom-calendar',
   USE_DEFAULT_TIMEZONE: 'use-default-timezone',
   CUSTOM_TIMEZONE: 'custom-timezone',
   FONT_SIZE: 'font-size',
@@ -19,6 +21,9 @@ function getCurrentLocale() {
 }
 function getCurrentTimezone() {
   return new Intl.DateTimeFormat().resolvedOptions().timeZone
+}
+function getCurrentCalendar() {
+  return new Intl.DateTimeFormat().resolvedOptions().calendar
 }
 
 function updateLevel(lvl) {
@@ -76,22 +81,23 @@ function b(label) {
 }
 
 class BaseFormatter {
-  constructor(timezone, locale) {
-    this.config(timezone, locale)
+  constructor(timezone, locale, calendar) {
+    this.config(timezone, locale, calendar)
   }
 
-  config(timezone, locale) {}
+  config(timezone, locale, calendar) {}
 
   format(pattern, date) {}
 }
 
-function createFormatter(formatterName, formatterDescription, customTimezone, customLocale) {
+function createFormatter(formatterName, formatterDescription, {customTimezone, customLocale, customCalendar} = {}) {
   return class CustomFormatter extends BaseFormatter {
     static fName = formatterName || ''
     static description = formatterDescription || ''
     static can = Object.freeze({
       customTimezone: !!customTimezone,
       customLocale: !!customLocale,
+      customCalendar: !!customCalendar
     })
   }
 }

@@ -38,6 +38,22 @@ const FormatterList = Object.keys(Formatters)
     name: Formatters[f].Formatter.fName,
     description: Formatters[f].Formatter.description,
   }))
+const CalendarList = [
+  {key:'gregory', description: '1 March 2010', name: 'Gregorian'},
+  {key:'buddhist', description: 'September 24, 2560 BE', name: 'Buddhist'},
+  {key:'chinese',	description: 'Eighth Month 5, 2017', name: 'Chinese'},
+  {key:'coptic', description: 'Tout 14, 1734 ERA1', name: 'Coptic'},
+  {key:'ethioaa',	description: 'Meskerem 14, 7510 ERA0', name: 'Ethiopic (Amete Alem)'},
+  {key:'ethiopic', description: 'Meskerem 14, 2010 ERA1', name: 'Ethiopic'},
+  {key:'hebrew', description: '4 Tishri 5778', name: 'Hebrew'},
+  {key:'indian', description: 'Asvina 2, 1939 Saka', name: 'Indian'},
+  {key:'islamic',	description: 'Muharram 4, 1439 AH', name: 'Islamic'},
+  {key:'islamic-civil', description: 'Muharram 3, 1439 AH', name: 'Islamic Civil'},
+  {key:'iso8601',	description: 'September 24, 2017', name: 'ISO 8601'},
+  {key:'japanese', description: 'September 24, 29 Heisei', name: 'Japanase'},
+  {key:'persian',	description: 'Mehr 2, 1396 AP', name: 'Persian'},
+  {key:'roc', description: 'September 24, 106 Minguo', name: 'Minguo'}
+]
 
 function init() {
   let localeDir = Me.dir.get_child('locale')
@@ -150,6 +166,40 @@ class Preferences {
       useDefaultLocaleLabel.hide()
     }
 
+    const defaultCalendarName = CalendarList.find(({key})=>key === Utils.getCurrentCalendar()).name
+
+    const useDefaultCalendarLabel = createLabel(
+      _('Use default calendar') + ` (${defaultCalendarName})`
+    )
+    const calendarBox = new Gtk.Box({
+      orientation: Gtk.Orientation.HORIZONTAL,
+      spacing: 30,
+    })
+    const useDefaultCalendarEdit = new Gtk.Switch({
+      vexpand: false,
+      valign: Gtk.Align.CENTER,
+    })
+    const customCalendarSelect = new Gtk.ComboBoxText({
+      hexpand: true,
+      halign: Gtk.Align.FILL,
+    })
+
+    CalendarList.forEach(({ key, name, description }) => {
+      customCalendarSelect.append(key, `${name} -> "${description}"`)
+    })
+
+    customCalendarSelect.set_active_id(
+      settings.get_string(Utils.PrefFields.CUSTOM_CALENDAR)
+    )
+
+    addBox(calendarBox, useDefaultCalendarEdit)
+    addBox(calendarBox, customCalendarSelect)
+    if (!Formatters[formatterSelect.active_id].Formatter.can.customCalendar) {
+      calendarBox.hide()
+      useDefaultCalendarLabel.hide()
+    }
+
+
     const useDefaultTimezoneLabel = createLabel(
       _('Use default timezone') + ` (${Utils.getCurrentTimezone()})`
     )
@@ -203,6 +253,7 @@ class Preferences {
     addRow(patternEdit, patternPreview)
     addRow(updateLevelLabel, updateLevelSelect)
     addRow(useDefaultLocaleLabel, localeBox)
+    addRow(useDefaultCalendarLabel, calendarBox)
     addRow(useDefaultTimezoneLabel, timezoneBox)
     addRow(removeMessagesIndicatorLabel, removeMessagesIndicatorEdit)
     addRow(applyAllPanelsLabel, applyAllPanelsEdit)
@@ -238,6 +289,18 @@ class Preferences {
       Utils.PrefFields.CUSTOM_LOCALE,
       customLocaleEdit.buffer,
       'text',
+      Gio.SettingsBindFlags.DEFAULT
+    )
+    settings.bind(
+      Utils.PrefFields.USE_DEFAULT_CALENDAR,
+      useDefaultCalendarEdit,
+      'active',
+      Gio.SettingsBindFlags.DEFAULT
+    )
+    settings.bind(
+      Utils.PrefFields.CUSTOM_CALENDAR,
+      customCalendarSelect,
+      'active-id',
       Gio.SettingsBindFlags.DEFAULT
     )
     settings.bind(
@@ -281,6 +344,12 @@ class Preferences {
       sensitivityBindFlags
     )
     settings.bind(
+      Utils.PrefFields.USE_DEFAULT_CALENDAR,
+      customCalendarSelect,
+      'sensitive',
+      sensitivityBindFlags
+    )
+    settings.bind(
       Utils.PrefFields.USE_DEFAULT_TIMEZONE,
       customTimezoneEdit,
       'sensitive',
@@ -288,6 +357,7 @@ class Preferences {
     )
 
     useDefaultLocaleEdit.connect('state-set', this.generatePreview.bind(this))
+    useDefaultCalendarEdit.connect('state-set', this.generatePreview.bind(this))
     useDefaultTimezoneEdit.connect('state-set', this.generatePreview.bind(this))
 
     customLocaleEdit.buffer.connect_after(
@@ -296,6 +366,10 @@ class Preferences {
     )
     customLocaleEdit.buffer.connect_after(
       'deleted-text',
+      this.generatePreview.bind(this)
+    )
+    customCalendarSelect.connect(
+      'changed',
       this.generatePreview.bind(this)
     )
     customTimezoneEdit.buffer.connect_after(
@@ -329,6 +403,13 @@ class Preferences {
         localeBox.hide()
         useDefaultLocaleLabel.hide()
       }
+      if (Formatters[formatterSelect.active_id].Formatter.can.customCalendar) {
+        calendarBox.show()
+        useDefaultCalendarLabel.show()
+      } else {
+        calendarBox.hide()
+        useDefaultCalendarLabel.hide()
+      }
       if (Formatters[formatterSelect.active_id].Formatter.can.customTimezone) {
         timezoneBox.show()
         useDefaultTimezoneLabel.show()
@@ -342,8 +423,10 @@ class Preferences {
     this._pattern = patternEdit.buffer
     this._preview = patternPreview
     this._customLocale = customLocaleEdit.buffer
-    this._customTimezone = customTimezoneEdit.buffer
     this._useDefaultLocale = useDefaultLocaleEdit
+    this._customCalendar = customCalendarSelect
+    this._useDefaultCalendar = useDefaultCalendarEdit
+    this._customTimezone = customTimezoneEdit.buffer
     this._useDefaultTimezone = useDefaultTimezoneEdit
     this._previewErrorCount = 0
     this.generatePreview()
@@ -359,6 +442,9 @@ class Preferences {
     const locale = this._useDefaultLocale.active
       ? Utils.getCurrentLocale()
       : this._customLocale.text
+    const calendar = this._useDefaultCalendar.active
+      ? Utils.getCurrentCalendar()
+      : this._customCalendar.active_id
     const timezone = this._useDefaultTimezone.active
       ? Utils.getCurrentTimezone()
       : this._customTimezone.text
@@ -367,7 +453,8 @@ class Preferences {
       try {
         this._preview.label = new Formatters[formatter].Formatter(
           timezone,
-          locale
+          locale,
+          calendar
         ).format(this._pattern.text, new Date())
         this._previewErrorCount = 0
       } catch (e) {

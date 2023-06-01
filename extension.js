@@ -26,8 +26,10 @@ const Formatters = Me.imports.formatters
 
 let PATTERN = ''
 let USE_DEFAULT_LOCALE = true
+let USE_DEFAULT_CALENDAR = true
 let USE_DEFAULT_TIMEZONE = true
 let CUSTOM_LOCALE = ''
+let CUSTOM_CALENDAR = ''
 let CUSTOM_TIMEZONE = ''
 let REMOVE_MESSAGES_INDICATOR = false
 let APPLY_ALL_PANELS = false
@@ -77,6 +79,10 @@ class Extension {
       Utils.PrefFields.USE_DEFAULT_LOCALE
     )
     CUSTOM_LOCALE = this._settings.get_string(Utils.PrefFields.CUSTOM_LOCALE)
+    USE_DEFAULT_CALENDAR = this._settings.get_boolean(
+      Utils.PrefFields.USE_DEFAULT_CALENDAR
+    )
+    CUSTOM_CALENDAR = this._settings.get_string(Utils.PrefFields.CUSTOM_CALENDAR)
     USE_DEFAULT_TIMEZONE = this._settings.get_boolean(
       Utils.PrefFields.USE_DEFAULT_TIMEZONE
     )
@@ -95,12 +101,13 @@ class Extension {
     }
 
     const locale = USE_DEFAULT_LOCALE ? Utils.getCurrentLocale() : CUSTOM_LOCALE
+    const calendar = USE_DEFAULT_CALENDAR ? Utils.getCurrentCalendar() : CUSTOM_CALENDAR
     const timezone = USE_DEFAULT_TIMEZONE
       ? Utils.getCurrentTimezone()
       : CUSTOM_TIMEZONE
 
     const formatter = this._settings.get_string(Utils.PrefFields.FORMATTER)
-    this._formatter = new Formatters[formatter].Formatter(timezone, locale)
+    this._formatter = new Formatters[formatter].Formatter(timezone, locale, calendar)
   }
 
   _removeIndicator(panels) {

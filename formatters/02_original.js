@@ -11,7 +11,7 @@ function convertFromPattern(str) {
   return str.replace(/>`</g, "'")
 }
 
-var Formatter = class Formatter extends createFormatter('SimpleDateFormat','',false,true) {
+var Formatter = class Formatter extends createFormatter('SimpleDateFormat','',{customLocale:true}) {
   config(timezone, locale) {
     this._formatter = new SimpleDateFormat(locale)
   }

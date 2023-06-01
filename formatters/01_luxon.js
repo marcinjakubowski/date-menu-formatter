@@ -3,16 +3,20 @@ const Me = ExtensionUtils.getCurrentExtension()
 const { DateTime } = Me.imports.lib.luxon.exports
 const { createFormatter } = Me.imports.utils
 
-var Formatter = class Formatter extends createFormatter('Luxon','',true,true) {
-  config(timezone, locale) {
+var Formatter = class Formatter extends createFormatter('Luxon','',{customTimezone: true, customLocale:true, customCalendar: true}) {
+  config(timezone, locale, calendar) {
     this._timezone = timezone
     this._locale = locale
+    this._calendar = calendar
   }
 
   format(pattern, date) {
     return DateTime.fromJSDate(date)
       .setZone(this._timezone)
-      .setLocale(this._locale)
+      .reconfigure({
+        locale: this._locale,
+        outputCalendar: this._calendar
+      })
       .toFormat(pattern.replaceAll('\\n', '\n'))
   }
 }

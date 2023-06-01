@@ -2,7 +2,7 @@
   <schema id="org.gnome.shell.extensions.date-menu-formatter"
       path="/org/gnome/shell/extensions/date-menu-formatter/">
     <key type="s" name="formatter">
-        <default>"luxon"</default>
+        <default>"01_luxon"</default>
         <summary>Date formatter</summary>
         <description></description>
     </key>

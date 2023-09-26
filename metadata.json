@@ -6,6 +6,7 @@
     "45"
   ],
   "version": 10,
+  "gettext-domain": "date-menu-formatter",
   "settings-schema": "org.gnome.shell.extensions.date-menu-formatter",
   "url": "https://github.com/marcinjakubowski/date-menu-formatter"
 }

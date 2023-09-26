@@ -16,12 +16,11 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-const { Clutter, St } = imports.gi;
+const { GLib, Clutter, St } = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const { SimpleDateFormat } = Me.imports.lib.SimpleDateFormat;
 const Utils = Me.imports.utils;
-const Mainloop = imports.mainloop;
 const Main = imports.ui.main;
 const MainPanel = Main.panel
 
@@ -155,7 +154,7 @@ class Extension {
         this._loadSettings();
         const [affectedPanels, _] = this._getPanels();
         this._enableOn(affectedPanels);
-        this._timerId = Mainloop.timeout_add_seconds(1, this.update.bind(this))
+        this._timerId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, this.update.bind(this))
         this.update()
     }
 
@@ -178,7 +177,7 @@ class Extension {
         const allPanels = [...affectedPanels, ...unaffectedPanels]
         this._disableOn(allPanels);
         this._restoreIndicator(allPanels);
-        Mainloop.source_remove(this._timerId);
+        GLib.Source.remove(this._timerId);
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = null;

@@ -16,14 +16,16 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-const { GLib, Clutter, St } = imports.gi;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { SimpleDateFormat } = Me.imports.lib.SimpleDateFormat;
-const Utils = Me.imports.utils;
-const Main = imports.ui.main;
+import GLib from 'gi://GLib';
+import Clutter from 'gi://Clutter';
+import St from 'gi://St';
+
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 const MainPanel = Main.panel
 
+import * as Utils from './utils.js';
+import { SimpleDateFormat } from './lib/SimpleDateFormat.js';
 
 let PATTERN = "";
 let USE_DEFAULT_LOCALE = true
@@ -37,8 +39,10 @@ function _getDateMenuButton(panel) {
     return panel.statusArea.dateMenu.get_children()[0];
 }
 
-class Extension {
-    constructor() {
+export default class DateMenuFormatter extends Extension {
+    constructor(metadata) {
+        super(metadata);
+
         this._displays = [this._createDisplay()]
         this._timerId = -1;
         this._settingsChangedId = null;
@@ -58,7 +62,7 @@ class Extension {
     }
 
     _loadSettings() {
-        this._settings = ExtensionUtils.getSettings();
+        this._settings = this.getSettings();
         this._settingsChangedId = this._settings.connect('changed', this._onSettingsChange.bind(this));
         this._onSettingsChange();
     }
@@ -188,8 +192,4 @@ class Extension {
         }
         this._settings = null;
     }
-}
-
-function init() {
-    return new Extension();
 }

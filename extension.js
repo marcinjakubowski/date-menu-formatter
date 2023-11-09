@@ -39,14 +39,6 @@ function _getDateMenuButton(panel) {
 }
 
 export default class MyExtension extends Extension {
-    constructor() {
-        this._displays = [this._createDisplay()]
-        this._timerId = -1;
-        this._settingsChangedId = null;
-        this._dashToPanelConnection = null;
-        this._formatter = null;
-    }
-
     _createDisplay() {
         const display = new St.Label({
           style_class: 'clock',
@@ -149,6 +141,14 @@ export default class MyExtension extends Extension {
     }    
 
     enable() {
+        /* from old constructor () */
+        this._displays = [this._createDisplay()]
+        this._timerId = -1;
+        this._settingsChangedId = null;
+        this._dashToPanelConnection = null;
+        this._formatter = null;
+
+
         if (global.dashToPanel) {
             this._dashToPanelConnection = global.dashToPanel.connect('panels-created', () => this._onSettingsChange());
         }
@@ -189,8 +189,4 @@ export default class MyExtension extends Extension {
         }
         this._settings = null;
     }
-}
-
-function init() {
-    return new Extension();
 }

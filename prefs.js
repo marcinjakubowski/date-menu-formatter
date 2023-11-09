@@ -21,34 +21,24 @@
     https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator
     https://extensions.gnome.org/extension/779/clipboard-indicator/
 */
-const Gtk = imports.gi.Gtk;
-const Gio = imports.gi.Gio;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { SimpleDateFormat } = Me.imports.lib.SimpleDateFormat;
-const Utils = Me.imports.utils;
-
-const Gettext = imports.gettext;
-const _ = Gettext.domain('date-menu-formatter').gettext;
-
-function init() {
-    let localeDir = Me.dir.get_child('locale');
-    if (localeDir.query_exists(null))
-        Gettext.bindtextdomain('date-menu-formatter', localeDir.get_path());
-}
+import Gtk from 'gi://Gtk';
+import Gio from 'gi://Gio';
+import Adw from 'gi://Adw';
+import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import { SimpleDateFormat } from './lib/SimpleDateFormat.js';
+import * as Utils from './utils.js';
 
 function addBox(box, child) {
-    if (imports.gi.versions.Gtk.startsWith("3")) {
-        box.add(child);
-    }
-    else {
-        box.append(child);
+    if (box.add) {
+        box.add (child);
+    } else {
+        box.append (child);
     }
 }
 
 
 class Preferences {
-    constructor() {
+    constructor(settings) {
         this.main = new Gtk.Grid({
             margin_top: 10,
             margin_bottom: 10,
@@ -181,7 +171,6 @@ class Preferences {
         
         addRow(help1, help2)
 
-        const settings = ExtensionUtils.getSettings();
         settings.bind(Utils.PrefFields.PATTERN, patternEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
         settings.bind(Utils.PrefFields.USE_DEFAULT_LOCALE, useDefaultLocaleEdit, 'active', Gio.SettingsBindFlags.DEFAULT);
         settings.bind(Utils.PrefFields.CUSTOM_LOCALE, customLocaleEdit.buffer, 'text', Gio.SettingsBindFlags.DEFAULT);
@@ -228,14 +217,16 @@ class Preferences {
             this._previewErrorCount = 0
         }
     }
+
 };
 
-function buildPrefsWidget() {
-    let frame = new Gtk.Box();
-    let widget = new Preferences();
-    addBox(frame, widget.main);
-    if (frame.show_all)
+export default class MyPreferences extends ExtensionPreferences {
+    buildPrefsWidget = function (window) {
+        let frame = new Gtk.Box();
+        let widget = new Preferences(this.getSettings ());
+        addBox(frame, widget.main);
+        if (frame.show_all)
 	    frame.show_all();
-    return frame;
+        return frame;
+    }
 }
-

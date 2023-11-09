@@ -1,4 +1,4 @@
-var PrefFields = {
+export const PrefFields = {
     PATTERN             : 'pattern',
     USE_DEFAULT_LOCALE  : 'use-default-locale',
     CUSTOM_LOCALE       : 'custom-locale',
@@ -7,14 +7,14 @@ var PrefFields = {
     REMOVE_MESSAGES_INDICATOR: 'remove-messages-indicator'
 };
 
-function getCurrentLocale() {
+export function getCurrentLocale() {
     return (new Intl.DateTimeFormat()).resolvedOptions().locale
 }
 
-function convertToPattern(str) {
+export function convertToPattern(str) {
     return '#' + str.replace(new RegExp("\\\\n", "g"), "\n").replace(new RegExp("''", "g"), ">`<")
 }
 
-function convertFromPattern(str) {
+export function convertFromPattern(str) {
     return str.replace(new RegExp('>`<', "g"), "'")
 }

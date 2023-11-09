@@ -16,13 +16,13 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-const { Clutter, St } = imports.gi;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { SimpleDateFormat } = Me.imports.lib.SimpleDateFormat;
-const Utils = Me.imports.utils;
-const Mainloop = imports.mainloop;
-const Main = imports.ui.main;
+import Clutter from 'gi://Clutter';
+import St from 'gi://St';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { SimpleDateFormat } from './lib/SimpleDateFormat.js';
+import * as Utils from './utils.js';
+import GLib from 'gi://GLib';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js'
 const MainPanel = Main.panel
 
 
@@ -38,7 +38,7 @@ function _getDateMenuButton(panel) {
     return panel.statusArea.dateMenu.get_children()[0];
 }
 
-class Extension {
+export default class MyExtension extends Extension {
     constructor() {
         this._displays = [this._createDisplay()]
         this._timerId = -1;
@@ -59,7 +59,7 @@ class Extension {
     }
 
     _loadSettings() {
-        this._settings = ExtensionUtils.getSettings();
+        this._settings = this.getSettings ();
         this._settingsChangedId = this._settings.connect('changed', this._onSettingsChange.bind(this));
         this._onSettingsChange();
     }
@@ -155,7 +155,7 @@ class Extension {
         this._loadSettings();
         const [affectedPanels, _] = this._getPanels();
         this._enableOn(affectedPanels);
-        this._timerId = Mainloop.timeout_add_seconds(1, this.update.bind(this))
+        this._timerId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, this.update.bind(this))
         this.update()
     }
 
@@ -178,7 +178,7 @@ class Extension {
         const allPanels = [...affectedPanels, ...unaffectedPanels]
         this._disableOn(allPanels);
         this._restoreIndicator(allPanels);
-        Mainloop.source_remove(this._timerId);
+        GLib.source_remove(this._timerId);
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = null;

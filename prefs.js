@@ -1,4 +1,4 @@
-/* extension.js
+/* prefs.js
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -221,12 +221,24 @@ class Preferences {
 };
 
 export default class MyPreferences extends ExtensionPreferences {
-    buildPrefsWidget = function (window) {
-        let frame = new Gtk.Box();
+    fillPreferencesWindow (window) {
+        // Create a preferences page, with a single group
+        const page = new Adw.PreferencesPage({
+            title: _('General'),
+            icon_name: 'dialog-information-symbolic',
+        });
+        window.add(page);
+
+        const group = new Adw.PreferencesGroup({
+            title: _('Appearance'),
+            description: _('Configure the appearance of the extension'),
+        });
+        page.add(group);
+
+        let frame = group;
         let widget = new Preferences(this.getSettings ());
         addBox(frame, widget.main);
         if (frame.show_all)
 	    frame.show_all();
-        return frame;
     }
 }

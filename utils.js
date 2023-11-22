@@ -18,3 +18,10 @@ function convertToPattern(str) {
 function convertFromPattern(str) {
     return str.replace(new RegExp('>`<', "g"), "'")
 }
+
+export {
+    PrefFields,
+    getCurrentLocale,
+    convertToPattern,
+    convertFromPattern,
+};

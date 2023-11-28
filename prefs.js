@@ -270,7 +270,8 @@ class Preferences {
     })
 
     customCalendarSelect.set_active_id(
-      this.settings.get_string(prefFields.CUSTOM_CALENDAR)
+      this.settings.get_string(prefFields.CUSTOM_CALENDAR) ||
+        getCurrentCalendar()
     )
 
     addBox(calendarBox, useDefaultCalendarEdit)

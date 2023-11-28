@@ -28,9 +28,9 @@ import {
   getCurrentLocale,
   getCurrentCalendar,
   getCurrentTimezone,
+  updateLevel,
 } from './utils/general.js'
 import { FormatterManager } from './utils/formatter.js'
-import FORMATTER from './formatters/01_luxon.js'
 import * as prefFields from './utils/prefFields.js'
 
 let PATTERN = ''
@@ -43,6 +43,7 @@ let CUSTOM_TIMEZONE = ''
 let REMOVE_MESSAGES_INDICATOR = false
 let APPLY_ALL_PANELS = false
 let FONT_SIZE = 1
+let EVERY = updateLevel()
 
 function _getDateMenuButton(panel) {
   return panel.statusArea.dateMenu.get_children()[0]
@@ -52,12 +53,14 @@ export default class DateMenuFormatter extends Extension {
   constructor(metadata) {
     super(metadata)
 
-    this._formatters = new FormatterManager(true)
+    this.formatters = new FormatterManager()
+    this._formatters_load_promise = this.formatters.loadFormatters()
     this._displays = [this._createDisplay()]
     this._timerId = -1
     this._settingsChangedId = null
     this._dashToPanelConnection = null
     this._formatter = null
+    this._update = true
   }
 
   _createDisplay() {
@@ -82,6 +85,7 @@ export default class DateMenuFormatter extends Extension {
 
   _fetchSettings() {
     PATTERN = this._settings.get_string(prefFields.PATTERN)
+
     REMOVE_MESSAGES_INDICATOR = this._settings.get_boolean(
       prefFields.REMOVE_MESSAGES_INDICATOR
     )
@@ -89,8 +93,22 @@ export default class DateMenuFormatter extends Extension {
       prefFields.USE_DEFAULT_LOCALE
     )
     CUSTOM_LOCALE = this._settings.get_string(prefFields.CUSTOM_LOCALE)
+    USE_DEFAULT_CALENDAR = this._settings.get_boolean(
+      prefFields.USE_DEFAULT_CALENDAR
+    )
+    CUSTOM_CALENDAR = this._settings.get_string(prefFields.CUSTOM_CALENDAR)
+    USE_DEFAULT_TIMEZONE = this._settings.get_boolean(
+      prefFields.USE_DEFAULT_TIMEZONE
+    )
+    CUSTOM_TIMEZONE = this._settings.get_string(prefFields.CUSTOM_TIMEZONE)
     APPLY_ALL_PANELS = this._settings.get_boolean(prefFields.APPLY_ALL_PANELS)
     FONT_SIZE = this._settings.get_int(prefFields.FONT_SIZE)
+
+    const curLvl = this._settings.get_int(prefFields.UPDATE_LEVEL)
+    if (EVERY.lvl !== curLvl) {
+      EVERY = updateLevel(curLvl)
+      if (this._timerId !== -1) this.restart()
+    }
 
     const locale = USE_DEFAULT_LOCALE ? getCurrentLocale() : CUSTOM_LOCALE
     const calendar = USE_DEFAULT_CALENDAR
@@ -100,7 +118,13 @@ export default class DateMenuFormatter extends Extension {
       ? getCurrentTimezone()
       : CUSTOM_TIMEZONE
 
-    this._formatter = new FORMATTER(timezone, locale, calendar)
+    this._formatters_load_promise.then(() => {
+      const formatterKey = this._settings.get_string(prefFields.FORMATTER)
+      const formatter = this.formatters.getFormatter(formatterKey)
+      if (formatter) {
+        this._formatter = new formatter(timezone, locale, calendar)
+      }
+    })
   }
 
   _removeIndicator(panels) {
@@ -209,12 +233,25 @@ export default class DateMenuFormatter extends Extension {
     this._loadSettings()
     const [affectedPanels, _] = this._getPanels()
     this._enableOn(affectedPanels)
-    this._timerId = GLib.timeout_add_seconds(
-      GLib.PRIORITY_DEFAULT,
-      1,
-      this.update.bind(this)
+    this.start()
+  }
+  start() {
+    this._update = true
+    this._timerId = GLib.timeout_add(EVERY.priority, EVERY.timeout, () =>
+      this.update()
     )
     this.update()
+  }
+  stop(force) {
+    if (force) {
+      GLib.Source.remove(this._timerId)
+    } else {
+      this._update = false
+    }
+  }
+  restart() {
+    this.stop(true)
+    this.start()
   }
 
   update() {
@@ -225,9 +262,10 @@ export default class DateMenuFormatter extends Extension {
     } catch (e) {
       // if there is an exception during formatting, use the default display's text
       setText(MainPanel.statusArea.dateMenu._clockDisplay.text)
-      log('DateMenuFormatter: ' + e.message)
+      if (this._formatter !== null && this._formatter !== undefined)
+        log('DateMenuFormatter: ' + e.message)
     }
-    return true
+    return this._update
   }
 
   disable() {
@@ -235,7 +273,7 @@ export default class DateMenuFormatter extends Extension {
     const allPanels = [...affectedPanels, ...unaffectedPanels]
     this._disableOn(allPanels)
     this._restoreIndicator(allPanels)
-    GLib.Source.remove(this._timerId)
+    this.stop()
     if (this._settingsChangedId) {
       this._settings.disconnect(this._settingsChangedId)
       this._settingsChangedId = null

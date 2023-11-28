@@ -498,7 +498,7 @@ export default class DateMenuFormatterPreferences extends ExtensionPreferences {
   }
   fillPreferencesWindow(window) {
     window._settings = this.getSettings()
-    window.set_default_size(500, 700)
+    window.set_size_request(1000, 700)
     const page = new Adw.PreferencesPage()
 
     const group = new Adw.PreferencesGroup({

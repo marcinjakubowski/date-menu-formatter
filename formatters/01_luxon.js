@@ -52,7 +52,7 @@ export const help = new FormatterHelp(
     ['EEEEE', 'weekday (narrow)', 'T'],
     ['', '', ''],
     ['h', 'hour', '1-12'],
-    ['hh', 'hour (padded)', '1-12'],
+    ['hh', 'hour (padded)', '01-12'],
     ['H', 'hour', '0-23'],
     ['HH', 'hour (padded)', '00-23'],
     ['a', 'AM-PM', ''],

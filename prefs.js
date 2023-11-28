@@ -21,28 +21,42 @@
     https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator
     https://extensions.gnome.org/extension/779/clipboard-indicator/
 */
-import Gtk from 'gi://Gtk'
 import Gio from 'gi://Gio'
+import Gtk from 'gi://Gtk?version=4.0'
 
 import {
   ExtensionPreferences,
   gettext as _,
 } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
 
-import { SimpleDateFormat } from './lib/SimpleDateFormat.js'
-import * as Utils from './utils.js'
-import * as prefFields from './utils/prefFields.js'
+import { default as FORMATTER, help } from './formatters/01_luxon.js'
 
-function addBox(box, child) {
-  if (imports.gi.versions.Gtk.startsWith('3')) {
-    box.add(child)
-  } else {
-    box.append(child)
-  }
-}
+import * as prefFields from './utils/prefFields.js'
+import {
+  getCurrentCalendar,
+  getCurrentTimezone,
+  getCurrentLocale,
+} from './utils/general.js'
+import { useAddRow, createLabel, addBox, table, a, b } from './utils/markup.js'
+import { FormatterManager } from './utils/formatter.js'
 
 class Preferences {
   constructor(settings) {
+    this.settings = settings
+    this.formatters = new FormatterManager()
+    this.initUI()
+    this.formatters
+      .loadFormatters()
+      .then(() => {
+        this.createUI()
+        this.generatePreview()
+      })
+      .catch((e) => {
+        console.error('Date Menu Formatter error:', e)
+      })
+  }
+
+  initUI() {
     this.main = new Gtk.Grid({
       margin_top: 10,
       margin_bottom: 10,
@@ -53,45 +67,51 @@ class Preferences {
       column_homogeneous: false,
       row_homogeneous: false,
     })
+    this._previewErrorCount = 0
+    this.addRow = useAddRow(this.main)
+    this.addSeparator = () => this.addRow(null, new Gtk.Separator())
+  }
 
-    const addRow = ((main) => {
-      let row = 0
-      return (label, input) => {
-        let inputWidget = input
+  createUI() {
+    this.UIcreatePatternSetting()
+    this.UIcreatePatternPreview()
+    this.addSeparator()
+    this.UIcreateDefaultLocaleSetting()
+    this.UIcreateRemoveUnreadMessagesSetting()
+    this.UIcreateAllPanelsSetting()
+    this.UIcreateFontSizeSetting()
+    this.addSeparator()
+    this.UIcreateFormatterHelp()
+  }
 
-        if (input instanceof Gtk.Switch) {
-          inputWidget = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL })
-          addBox(inputWidget, input)
-        }
-
-        if (label) {
-          main.attach(label, 0, row, 1, 1)
-          if (inputWidget) main.attach(inputWidget, 1, row, 1, 1)
-        } else {
-          main.attach(inputWidget, 0, row, 2, 1)
-        }
-
-        row++
-      }
-    })(this.main)
-
-    const createLabel = (label) => {
-      return new Gtk.Label({
-        label: label,
-        hexpand: true,
-        halign: Gtk.Align.START,
-      })
-    }
-
-    const patternLabel = createLabel(_('Pattern'))
+  UIcreatePatternSetting() {
     const patternEdit = new Gtk.Entry({ buffer: new Gtk.EntryBuffer() })
 
-    const previewLabel = createLabel(_('Preview'))
-    const patternPreview = createLabel('')
+    this.addRow(createLabel(_('Pattern')), patternEdit)
+    this._pattern = patternEdit.buffer
 
-    const useDefaultLocaleLabel = createLabel(
-      _('Use default locale') + ` (${Utils.getCurrentLocale()})`
+    this.settings.bind(
+      prefFields.PATTERN,
+      patternEdit.buffer,
+      'text',
+      Gio.SettingsBindFlags.DEFAULT
     )
+    patternEdit.buffer.connect_after(
+      'inserted-text',
+      this.generatePreview.bind(this)
+    )
+    patternEdit.buffer.connect_after(
+      'deleted-text',
+      this.generatePreview.bind(this)
+    )
+  }
+
+  UIcreatePatternPreview() {
+    this._preview = createLabel('')
+    this.addRow(createLabel(_('Preview')), this._preview)
+  }
+
+  UIcreateDefaultLocaleSetting() {
     const localeBox = new Gtk.Box({
       orientation: Gtk.Orientation.HORIZONTAL,
       spacing: 30,
@@ -100,137 +120,38 @@ class Preferences {
       vexpand: false,
       valign: Gtk.Align.CENTER,
     })
-
     const customLocaleEdit = new Gtk.Entry({ buffer: new Gtk.EntryBuffer() })
     addBox(localeBox, useDefaultLocaleEdit)
     addBox(localeBox, customLocaleEdit)
 
-    const removeMessagesIndicatorLabel = createLabel(
-      _('Remove unread messages indicator')
+    this.addRow(
+      createLabel(_('Use default locale') + ` (${getCurrentLocale()})`),
+      localeBox
     )
-    const removeMessagesIndicatorEdit = new Gtk.Switch()
+    this._customLocale = customLocaleEdit.buffer
+    this._useDefaultLocale = useDefaultLocaleEdit
 
-    const fontSizeLabel = createLabel(_('Font size'))
-    const fontSizeEdit = new Gtk.SpinButton({
-      adjustment: new Gtk.Adjustment({
-        lower: 4,
-        upper: 30,
-        step_increment: 1,
-      }),
-    })
-
-    fontSizeEdit.connect(
-      'output',
-      function (spin) {
-        spin.text = `${spin.value} pt`
-        return true
-      }.bind(this)
-    )
-
-    const applyAllPanelsLabel = createLabel(
-      _('Apply to all panels (Dash to Panel)')
-    )
-    const applyAllPanelsEdit = new Gtk.Switch()
-
-    addRow(patternLabel, previewLabel)
-    addRow(patternEdit, patternPreview)
-    addRow(useDefaultLocaleLabel, localeBox)
-    addRow(removeMessagesIndicatorLabel, removeMessagesIndicatorEdit)
-    addRow(applyAllPanelsLabel, applyAllPanelsEdit)
-    addRow(fontSizeLabel, fontSizeEdit)
-    addRow(null, new Gtk.Separator())
-
-    const markup_help1 = _(`<b>Available pattern components</b>
-<tt>y     </tt> - year
-<tt>yy    </tt> - year (2 digits only)
-
-<tt>M     </tt> - month (numeric) <i>4</i>
-<tt>MM    </tt> - month (numeric, padded) <i>04</i>
-<tt>MMM   </tt> - month (short) <i>Apr</i>
-<tt>MMMM  </tt> - month (full) <i>April</i>
-<tt>MMMMM </tt> - month (narrow) <i>A</i>
-
-<tt>w     </tt> - week of year
-<tt>ww    </tt> - week of year (padded)
-<tt>W     </tt> - week of month
-
-<tt>d     </tt> - day of month
-<tt>dd    </tt> - day of month (padded)
-
-<tt>'text'</tt> - literal text`)
-    const markup_help2 =
-      _(`<a href="https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table">Full list (web)</a>
-<tt>EEE   </tt> - weekday (abbrev.) <i>Tue</i>
-<tt>EEEE  </tt> - weekday (full) <i>Tuesday</i>
-<tt>EEEEE </tt> - weekday (narrow) <i>T</i>
-<tt>EEEEEE</tt> - weekday (short) <i>Tu</i>
-
-<tt>h     </tt> - hour (1-12)
-<tt>hh    </tt> - hour (1-12, padded)
-<tt>k     </tt> - hour (0-23)
-<tt>kk    </tt> - hour (00-23, padded)
-
-<tt>m     </tt> - minute
-<tt>mm    </tt> - minute (padded)
-
-<tt>aaa   </tt> - period (am/pm)
-
-
-<tt>\\n    </tt> - new line`)
-    const help1 = createLabel('')
-    help1.set_markup(markup_help1)
-
-    const help2 = createLabel('')
-    help2.set_markup(markup_help2)
-
-    addRow(help1, help2)
-
-    this.settings = settings
-    settings.bind(
-      prefFields.PATTERN,
-      patternEdit.buffer,
-      'text',
-      Gio.SettingsBindFlags.DEFAULT
-    )
-    settings.bind(
+    this.settings.bind(
       prefFields.USE_DEFAULT_LOCALE,
       useDefaultLocaleEdit,
       'active',
       Gio.SettingsBindFlags.DEFAULT
     )
-    settings.bind(
+
+    this.settings.bind(
+      prefFields.USE_DEFAULT_LOCALE,
+      customLocaleEdit,
+      'sensitive',
+      Gio.SettingsBindFlags.GET |
+        Gio.SettingsBindFlags.NO_SENSITIVITY |
+        Gio.SettingsBindFlags.INVERT_BOOLEAN
+    )
+
+    this.settings.bind(
       prefFields.CUSTOM_LOCALE,
       customLocaleEdit.buffer,
       'text',
       Gio.SettingsBindFlags.DEFAULT
-    )
-    settings.bind(
-      prefFields.REMOVE_MESSAGES_INDICATOR,
-      removeMessagesIndicatorEdit,
-      'active',
-      Gio.SettingsBindFlags.DEFAULT
-    )
-    settings.bind(
-      prefFields.APPLY_ALL_PANELS,
-      applyAllPanelsEdit,
-      'active',
-      Gio.SettingsBindFlags.DEFAULT
-    )
-    settings.bind(
-      prefFields.FONT_SIZE,
-      fontSizeEdit,
-      'value',
-      Gio.SettingsBindFlags.DEFAULT
-    )
-    const sensitivityBindFlags =
-      Gio.SettingsBindFlags.GET |
-      Gio.SettingsBindFlags.NO_SENSITIVITY |
-      Gio.SettingsBindFlags.INVERT_BOOLEAN
-    settings.bind(
-      prefFields.USE_DEFAULT_LOCALE,
-      customLocaleEdit,
-      'sensitive',
-      sensitivityBindFlags
     )
 
     useDefaultLocaleEdit.connect('state-set', this.generatePreview.bind(this))
@@ -242,39 +163,96 @@ class Preferences {
       'deleted-text',
       this.generatePreview.bind(this)
     )
-    patternEdit.buffer.connect_after(
-      'inserted-text',
-      this.generatePreview.bind(this)
+  }
+
+  UIcreateRemoveUnreadMessagesSetting() {
+    const removeMessagesIndicatorEdit = new Gtk.Switch()
+    this.addRow(
+      createLabel(_('Remove unread messages indicator')),
+      removeMessagesIndicatorEdit
     )
-    patternEdit.buffer.connect_after(
-      'deleted-text',
-      this.generatePreview.bind(this)
+
+    this.settings.bind(
+      prefFields.REMOVE_MESSAGES_INDICATOR,
+      removeMessagesIndicatorEdit,
+      'active',
+      Gio.SettingsBindFlags.DEFAULT
     )
-    this._pattern = patternEdit.buffer
-    this._preview = patternPreview
-    this._customLocale = customLocaleEdit.buffer
-    this._useDefaultLocale = useDefaultLocaleEdit
-    this._previewErrorCount = 0
-    this.generatePreview()
+  }
+
+  UIcreateAllPanelsSetting() {
+    const applyAllPanelsEdit = new Gtk.Switch()
+
+    this.addRow(
+      createLabel(_('Apply to all panels (Dash to Panel)')),
+      applyAllPanelsEdit
+    )
+    this.settings.bind(
+      prefFields.APPLY_ALL_PANELS,
+      applyAllPanelsEdit,
+      'active',
+      Gio.SettingsBindFlags.DEFAULT
+    )
+  }
+
+  UIcreateFontSizeSetting() {
+    const fontSizeEdit = new Gtk.SpinButton({
+      adjustment: new Gtk.Adjustment({
+        lower: 4,
+        upper: 30,
+        step_increment: 1,
+      }),
+    })
+
+    this.addRow(createLabel(_('Font size')), fontSizeEdit)
+
+    fontSizeEdit.connect(
+      'output',
+      function (spin) {
+        spin.text = `${spin.value} pt`
+        return true
+      }.bind(this)
+    )
+    this.settings.bind(
+      prefFields.FONT_SIZE,
+      fontSizeEdit,
+      'value',
+      Gio.SettingsBindFlags.DEFAULT
+    )
+  }
+
+  UIcreateFormatterHelp() {
+    const left = createLabel('')
+    left.set_markup(`${b('Available pattern components')}${table(help.left)}`)
+
+    const right = createLabel('')
+    right.set_markup(`${a(help.link, 'Full list (web)')}${table(help.right)}`)
+
+    this.addRow(left, right)
   }
 
   generatePreview() {
-    const text = Utils.convertToPattern(this._pattern.text)
     const locale = this._useDefaultLocale.active
-      ? Utils.getCurrentLocale()
+      ? getCurrentLocale()
       : this._customLocale.text
-    if (text.length > 1) {
+    const calendar = this._useDefaultCalendar.active
+      ? getCurrentCalendar()
+      : this._customCalendar.active_id
+    const timezone = this._useDefaultTimezone.active
+      ? getCurrentTimezone()
+      : this._customTimezone.text
+
+    if (this._pattern.text.length > 1) {
       try {
-        this._preview.label = Utils.convertFromPattern(
-          new SimpleDateFormat(locale).format(text, new Date())
+        this._preview.label = new FORMATTER(timezone, locale, calendar).format(
+          this._pattern.text,
+          new Date()
         )
         this._previewErrorCount = 0
       } catch (e) {
         this._previewErrorCount++
         if (this._previewErrorCount > 2) {
-          if (e.message !== 'fmtFn is not a function')
-            this._preview.label = 'ERROR: ' + e.message
-          else this._preview.label = 'ERROR'
+          this._preview.label = 'ERROR: ' + e.message
         }
       }
     } else {
@@ -286,8 +264,8 @@ class Preferences {
 
 export default class DateMenuFormatterPreferences extends ExtensionPreferences {
   getPreferencesWidget() {
-    let frame = new Gtk.Box()
-    let widget = new Preferences(this.getSettings())
+    const frame = new Gtk.Box()
+    const widget = new Preferences(this.getSettings())
     addBox(frame, widget.main)
     if (frame.show_all) frame.show_all()
     return frame

@@ -43,6 +43,9 @@ export const help = new FormatterHelp(
     ['o', 'day of year (unpadded)', '98'],
     ['ooo', 'day of year (padded to 3)', '002'],
     ['', '', ''],
+    ['s', 'second (unpadded)', '4'],
+    ['ss', 'second (padded to 2)', '04'],
+    ['', '', ''],
     ["'text'", 'literal text', ''],
   ],
   [
@@ -62,6 +65,9 @@ export const help = new FormatterHelp(
     ['', '', ''],
     ['q', 'quarter', '3'],
     ['qq', 'quarter (padded)', '03'],
+    ['', '', ''],
+    ['S', 'millisecond (unpadded)', '4'],
+    ['SS', 'millisecond (padded to 3)', '04'],
     ['', '', ''],
     ['\\n', 'new line', ''],
   ]

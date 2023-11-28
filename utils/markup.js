@@ -12,7 +12,9 @@ function findPadSize(rows) {
   return maxSize
 }
 function row(value, desc, ex) {
-  return `<tt><b>${value}</b></tt> | <tt>${_(desc)}</tt> | <i>${_(ex)}</i>\n`
+  return `|<tt><b>${value}</b></tt> | <tt>${_(desc)}</tt> | <tt><i>${_(
+    ex
+  )}</i></tt>\n`
 }
 
 export function table(rows) {

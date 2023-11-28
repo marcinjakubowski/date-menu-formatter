@@ -23,6 +23,7 @@
 */
 import Gio from 'gi://Gio'
 import Gtk from 'gi://Gtk?version=4.0'
+import Adw from 'gi://Adw'
 
 import {
   ExtensionPreferences,
@@ -261,7 +262,7 @@ class Preferences {
       valign: Gtk.Align.CENTER,
     })
     const customCalendarSelect = new Gtk.ComboBoxText({
-      hexpand: true,
+      hexpand: false,
       halign: Gtk.Align.FILL,
     })
 
@@ -494,5 +495,17 @@ export default class DateMenuFormatterPreferences extends ExtensionPreferences {
     addBox(frame, widget.main)
     if (frame.show_all) frame.show_all()
     return frame
+  }
+  fillPreferencesWindow(window) {
+    window._settings = this.getSettings()
+    window.set_default_size(500, 700)
+    const page = new Adw.PreferencesPage()
+
+    const group = new Adw.PreferencesGroup({
+      title: _('General'),
+    })
+    group.add(this.getPreferencesWidget())
+    page.add(group)
+    window.add(page)
   }
 }

@@ -61,6 +61,7 @@ export function useAddRow(main) {
     }
 
     row++
+    return row - 1
   }
 }
 

@@ -29,26 +29,30 @@ import {
   gettext as _,
 } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
 
-import { default as FORMATTER, help } from './formatters/01_luxon.js'
-
 import * as prefFields from './utils/prefFields.js'
 import {
   getCurrentCalendar,
   getCurrentTimezone,
   getCurrentLocale,
+  updateLevelToString,
 } from './utils/general.js'
 import { useAddRow, createLabel, addBox, table, a, b } from './utils/markup.js'
-import { FormatterManager } from './utils/formatter.js'
+import { CALENDAR_LIST, FormatterManager } from './utils/formatter.js'
 
 class Preferences {
   constructor(settings) {
     this.settings = settings
     this.formatters = new FormatterManager()
+    this._previewErrorCount = 0
+    this.box = {}
     this.initUI()
     this.formatters
       .loadFormatters()
       .then(() => {
         this.createUI()
+        this.UIShowHideFormatterAbility(
+          this.formatters.getFormatter(this._formatter.active_id).can
+        )
         this.generatePreview()
       })
       .catch((e) => {
@@ -67,21 +71,64 @@ class Preferences {
       column_homogeneous: false,
       row_homogeneous: false,
     })
-    this._previewErrorCount = 0
     this.addRow = useAddRow(this.main)
     this.addSeparator = () => this.addRow(null, new Gtk.Separator())
   }
 
   createUI() {
+    this.UIcreateFormatterSetting()
+    this.UIcreateFontSizeSetting()
     this.UIcreatePatternSetting()
     this.UIcreatePatternPreview()
     this.addSeparator()
+    this.UIcreateUpdateLevelSetting()
     this.UIcreateDefaultLocaleSetting()
+    this.UIcreateDefaultCalendarSetting()
+    this.UIcreateDefaultTimezoneSetting()
+    this.addSeparator()
     this.UIcreateRemoveUnreadMessagesSetting()
     this.UIcreateAllPanelsSetting()
-    this.UIcreateFontSizeSetting()
     this.addSeparator()
     this.UIcreateFormatterHelp()
+  }
+
+  UIcreateFormatterSetting() {
+    const formatterSelect = new Gtk.ComboBoxText({
+      hexpand: true,
+      halign: Gtk.Align.FILL,
+    })
+
+    this.formatters.asList().forEach(({ key, name }) => {
+      formatterSelect.append(key, name)
+    })
+
+    formatterSelect.set_active_id(
+      this.settings.get_string(prefFields.FORMATTER)
+    )
+    this._formatter = formatterSelect
+    this.addRow(createLabel(_('Formatter')), formatterSelect)
+
+    this.settings.bind(
+      prefFields.FORMATTER,
+      formatterSelect,
+      'active-id',
+      Gio.SettingsBindFlags.DEFAULT
+    )
+    formatterSelect.connect('changed', () => {
+      this.setHelpMarkup(
+        this.formatters.getFormatterHelp(this._formatter.active_id)
+      )
+      this.UIShowHideFormatterAbility(
+        this.formatters.getFormatter(this._formatter.active_id).can
+      )
+      this.generatePreview()
+    })
+  }
+
+  UIShowHideFormatterAbility(can) {
+    this.box.locale(can.customLocale)
+    this.box.calendar(can.customCalendar)
+    this.box.timezone(can.customTimezone)
   }
 
   UIcreatePatternSetting() {
@@ -108,10 +155,36 @@ class Preferences {
 
   UIcreatePatternPreview() {
     this._preview = createLabel('')
+    this._preview.set_use_markup(true)
     this.addRow(createLabel(_('Preview')), this._preview)
   }
 
+  UIcreateUpdateLevelSetting() {
+    const updateLevelSelect = new Gtk.ComboBoxText({
+      hexpand: true,
+      halign: Gtk.Align.FILL,
+    })
+
+    for (let i = 0; i <= 15; i++) {
+      updateLevelSelect.append('' + i, updateLevelToString(i))
+    }
+    updateLevelSelect.set_active_id(
+      '' + this.settings.get_int(prefFields.UPDATE_LEVEL)
+    )
+    this.addRow(createLabel(_('Update')), updateLevelSelect)
+
+    updateLevelSelect.connect('changed', () => {
+      this.settings.set_int(
+        prefFields.UPDATE_LEVEL,
+        parseInt(updateLevelSelect.active_id)
+      )
+    })
+  }
+
   UIcreateDefaultLocaleSetting() {
+    const useDefaultLocaleLabel = createLabel(
+      _('Use default locale') + ` (${getCurrentLocale()})`
+    )
     const localeBox = new Gtk.Box({
       orientation: Gtk.Orientation.HORIZONTAL,
       spacing: 30,
@@ -124,10 +197,17 @@ class Preferences {
     addBox(localeBox, useDefaultLocaleEdit)
     addBox(localeBox, customLocaleEdit)
 
-    this.addRow(
-      createLabel(_('Use default locale') + ` (${getCurrentLocale()})`),
-      localeBox
-    )
+    this.addRow(useDefaultLocaleLabel, localeBox)
+
+    this.box.locale = (show) => {
+      if (show) {
+        localeBox.show()
+        useDefaultLocaleLabel.show()
+      } else {
+        localeBox.hide()
+        useDefaultLocaleLabel.hide()
+      }
+    }
     this._customLocale = customLocaleEdit.buffer
     this._useDefaultLocale = useDefaultLocaleEdit
 
@@ -160,6 +240,140 @@ class Preferences {
       this.generatePreview.bind(this)
     )
     customLocaleEdit.buffer.connect_after(
+      'deleted-text',
+      this.generatePreview.bind(this)
+    )
+  }
+  UIcreateDefaultCalendarSetting() {
+    const defaultCalendarName = CALENDAR_LIST.find(
+      ({ key }) => key === getCurrentCalendar()
+    ).name
+
+    const useDefaultCalendarLabel = createLabel(
+      _('Use default calendar') + ` (${defaultCalendarName})`
+    )
+    const calendarBox = new Gtk.Box({
+      orientation: Gtk.Orientation.HORIZONTAL,
+      spacing: 30,
+    })
+    const useDefaultCalendarEdit = new Gtk.Switch({
+      vexpand: false,
+      valign: Gtk.Align.CENTER,
+    })
+    const customCalendarSelect = new Gtk.ComboBoxText({
+      hexpand: true,
+      halign: Gtk.Align.FILL,
+    })
+
+    CALENDAR_LIST.forEach(({ key, name, description }) => {
+      customCalendarSelect.append(key, `${name} -> "${description}"`)
+    })
+
+    customCalendarSelect.set_active_id(
+      this.settings.get_string(prefFields.CUSTOM_CALENDAR)
+    )
+
+    addBox(calendarBox, useDefaultCalendarEdit)
+    addBox(calendarBox, customCalendarSelect)
+
+    this.addRow(useDefaultCalendarLabel, calendarBox)
+
+    this.box.calendar = (show) => {
+      if (show) {
+        calendarBox.show()
+        useDefaultCalendarLabel.show()
+      } else {
+        calendarBox.hide()
+        useDefaultCalendarLabel.hide()
+      }
+    }
+    this._customCalendar = customCalendarSelect
+    this._useDefaultCalendar = useDefaultCalendarEdit
+
+    this.settings.bind(
+      prefFields.USE_DEFAULT_CALENDAR,
+      useDefaultCalendarEdit,
+      'active',
+      Gio.SettingsBindFlags.DEFAULT
+    )
+    this.settings.bind(
+      prefFields.CUSTOM_CALENDAR,
+      customCalendarSelect,
+      'active-id',
+      Gio.SettingsBindFlags.DEFAULT
+    )
+    this.settings.bind(
+      prefFields.USE_DEFAULT_CALENDAR,
+      customCalendarSelect,
+      'sensitive',
+      Gio.SettingsBindFlags.GET |
+        Gio.SettingsBindFlags.NO_SENSITIVITY |
+        Gio.SettingsBindFlags.INVERT_BOOLEAN
+    )
+    useDefaultCalendarEdit.connect('state-set', this.generatePreview.bind(this))
+    customCalendarSelect.connect('changed', this.generatePreview.bind(this))
+  }
+
+  UIcreateDefaultTimezoneSetting() {
+    const useDefaultTimezoneLabel = createLabel(
+      _('Use default timezone') + ` (${getCurrentTimezone()})`
+    )
+    const timezoneBox = new Gtk.Box({
+      orientation: Gtk.Orientation.HORIZONTAL,
+      spacing: 30,
+    })
+    const useDefaultTimezoneEdit = new Gtk.Switch({
+      vexpand: false,
+      valign: Gtk.Align.CENTER,
+    })
+
+    const customTimezoneEdit = new Gtk.Entry({ buffer: new Gtk.EntryBuffer() })
+
+    addBox(timezoneBox, useDefaultTimezoneEdit)
+    addBox(timezoneBox, customTimezoneEdit)
+
+    this.addRow(useDefaultTimezoneLabel, timezoneBox)
+
+    this.box.timezone = (show) => {
+      if (show) {
+        timezoneBox.show()
+        useDefaultTimezoneLabel.show()
+      } else {
+        timezoneBox.hide()
+        useDefaultTimezoneLabel.hide()
+      }
+    }
+    this._customTimezone = customTimezoneEdit.buffer
+    this._useDefaultTimezone = useDefaultTimezoneEdit
+
+    this.settings.bind(
+      prefFields.USE_DEFAULT_TIMEZONE,
+      useDefaultTimezoneEdit,
+      'active',
+      Gio.SettingsBindFlags.DEFAULT
+    )
+    this.settings.bind(
+      prefFields.CUSTOM_TIMEZONE,
+      customTimezoneEdit.buffer,
+      'text',
+      Gio.SettingsBindFlags.DEFAULT
+    )
+    this.settings.bind(
+      prefFields.USE_DEFAULT_TIMEZONE,
+      customTimezoneEdit,
+      'sensitive',
+      Gio.SettingsBindFlags.GET |
+        Gio.SettingsBindFlags.NO_SENSITIVITY |
+        Gio.SettingsBindFlags.INVERT_BOOLEAN
+    )
+
+    useDefaultTimezoneEdit.connect('state-set', this.generatePreview.bind(this))
+
+    customTimezoneEdit.buffer.connect_after(
+      'inserted-text',
+      this.generatePreview.bind(this)
+    )
+    customTimezoneEdit.buffer.connect_after(
       'deleted-text',
       this.generatePreview.bind(this)
     )
@@ -210,6 +424,7 @@ class Preferences {
       'output',
       function (spin) {
         spin.text = `${spin.value} pt`
+        this.FONT_SIZE = spin.value
         return true
       }.bind(this)
     )
@@ -223,10 +438,16 @@ class Preferences {
 
   UIcreateFormatterHelp() {
     const left = createLabel('')
-    left.set_markup(`${b('Available pattern components')}${table(help.left)}`)
-
     const right = createLabel('')
-    right.set_markup(`${a(help.link, 'Full list (web)')}${table(help.right)}`)
+
+    this.setHelpMarkup = (help) => {
+      left.set_markup(`${b('Available pattern components')}${table(help.left)}`)
+      right.set_markup(`${a(help.link, 'Full list (web)')}${table(help.right)}`)
+    }
+
+    this.setHelpMarkup(
+      this.formatters.getFormatterHelp(this._formatter.active_id)
+    )
 
     this.addRow(left, right)
   }
@@ -244,7 +465,10 @@ class Preferences {
 
     if (this._pattern.text.length > 1) {
       try {
-        this._preview.label = new FORMATTER(timezone, locale, calendar).format(
+        const formatter = this.formatters.getFormatter(
+          this._formatter.active_id
+        )
+        this._preview.label = new formatter(timezone, locale, calendar).format(
           this._pattern.text,
           new Date()
         )

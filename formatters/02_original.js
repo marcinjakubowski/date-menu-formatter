@@ -12,7 +12,7 @@ function convertFromPattern(str) {
 export default class extends createFormatter('SimpleDateFormat', '', {
   customLocale: true,
 }) {
-  config(timezone, locale) {
+  config(_, locale) {
     this._formatter = new SimpleDateFormat(locale)
   }
 

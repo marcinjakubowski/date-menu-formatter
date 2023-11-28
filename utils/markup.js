@@ -1,3 +1,4 @@
+import Gtk from 'gi://Gtk'
 import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
 
 function findPadSize(rows) {
@@ -32,4 +33,41 @@ export function a(ref, label) {
 }
 export function b(label) {
   return `<b>${_(label)}</b>`
+}
+
+export function addBox(box, child) {
+  if (imports.gi.versions.Gtk.startsWith('3')) {
+    box.add(child)
+  } else {
+    box.append(child)
+  }
+}
+
+export function useAddRow(main) {
+  let row = 0
+  return (label, input) => {
+    let inputWidget = input
+
+    if (input instanceof Gtk.Switch) {
+      inputWidget = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL })
+      addBox(inputWidget, input)
+    }
+
+    if (label) {
+      main.attach(label, 0, row, 1, 1)
+      if (inputWidget) main.attach(inputWidget, 1, row, 1, 1)
+    } else {
+      main.attach(inputWidget, 0, row, 2, 1)
+    }
+
+    row++
+  }
+}
+
+export function createLabel(label) {
+  return new Gtk.Label({
+    label: label,
+    hexpand: true,
+    halign: Gtk.Align.START,
+  })
 }

@@ -60,14 +60,7 @@ export class FormatterManager {
     if (load) this.loadFormatters()
   }
   async loadFormatters() {
-    console.log(
-      'import.meta.url:',
-      import.meta.url,
-      'resolved url:',
-      resolveUri(import.meta.url, '../../formatters')
-    )
-    this.formatters = await importDir([import.meta.url, '../../formatters'])
-    console.log('FormatterManager loaded formatters:', this.formatters)
+    this.formatters = await importDir([import.meta.url, '../formatters'])
     return this.formatters
   }
 

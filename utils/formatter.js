@@ -1,4 +1,4 @@
-import { importDir, resolveUri } from '../lib/importDir.js'
+import { importDir } from '../lib/importDir.js'
 
 export class BaseFormatter {
   constructor(timezone, locale, calendar) {

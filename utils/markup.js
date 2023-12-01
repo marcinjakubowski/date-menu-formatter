@@ -38,11 +38,7 @@ export function b(label) {
 }
 
 export function addBox(box, child) {
-  if (imports.gi.versions.Gtk.startsWith('3')) {
-    box.add(child)
-  } else {
-    box.append(child)
-  }
+  box.append(child)
 }
 
 export function useAddRow(main) {

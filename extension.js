@@ -53,9 +53,9 @@ export default class DateMenuFormatter extends Extension {
   constructor(metadata) {
     super(metadata)
 
-    this.formatters = new FormatterManager()
-    this._formatters_load_promise = this.formatters.loadFormatters()
-    this._displays = [this._createDisplay()]
+    this.formatters = null
+    this._formatters_load_promise = null
+    this._displays = null
     this._timerId = -1
     this._settingsChangedId = null
     this._dashToPanelConnection = null
@@ -224,6 +224,9 @@ export default class DateMenuFormatter extends Extension {
   }
 
   enable() {
+    this.formatters = new FormatterManager()
+    this._formatters_load_promise = this.formatters.loadFormatters()
+    this._displays = [this._createDisplay()]
     if (global.dashToPanel) {
       this._dashToPanelConnection = global.dashToPanel.connect(
         'panels-created',
@@ -263,7 +266,7 @@ export default class DateMenuFormatter extends Extension {
       // if there is an exception during formatting, use the default display's text
       setText(MainPanel.statusArea.dateMenu._clockDisplay.text)
       if (this._formatter !== null && this._formatter !== undefined)
-        log('DateMenuFormatter: ' + e.message)
+        console.log('DateMenuFormatter: ' + e.message)
     }
     return this._update
   }
@@ -283,5 +286,9 @@ export default class DateMenuFormatter extends Extension {
       this._dashToPanelConnection = null
     }
     this._settings = null
+    this.formatters = null
+    this._formatters_load_promise = null
+    this.display?.forEach((d) => d?.destroy())
+    this._displays = null
   }
 }

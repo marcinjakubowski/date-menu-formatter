@@ -51,7 +51,7 @@ export const help = new FormatterHelp(
     ['EEEEEE', 'weekday (short)', 'Tu'],
     ['', '', ''],
     ['h', 'hour', '1-12'],
-    ['hh', 'hour (padded)', '1-12'],
+    ['hh', 'hour (padded)', '01-12'],
     ['k', 'hour', '0-23'],
     ['kk', 'hour (padded)', '00-23'],
     ['', '', ''],

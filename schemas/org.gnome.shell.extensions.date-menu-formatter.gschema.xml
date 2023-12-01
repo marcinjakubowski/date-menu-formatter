@@ -1,7 +1,11 @@
-<schemalist gettext-domain="gnome-shell-extensions">
+<schemalist gettext-domain="date-menu-formatter">
   <schema id="org.gnome.shell.extensions.date-menu-formatter"
       path="/org/gnome/shell/extensions/date-menu-formatter/">
-
+    <key type="s" name="formatter">
+        <default>"01_luxon"</default>
+        <summary>Date formatter</summary>
+        <description></description>
+    </key>
     <key type="s" name="pattern">
         <default>"EEE, MMM d  H : mm"</default>
         <summary>Date format pattern</summary>
@@ -15,6 +19,26 @@
     <key type="b" name="use-default-locale">
         <default>true</default>
         <summary>Should default system locale be used</summary>
+        <description></description>
+    </key>
+    <key type="s" name="custom-calendar">
+        <default>""</default>
+        <summary>Custom Calendar</summary>
+        <description></description>
+    </key>
+    <key type="b" name="use-default-calendar">
+        <default>true</default>
+        <summary>Should default calendar be used</summary>
+        <description></description>
+    </key>   
+    <key type="s" name="custom-timezone">
+        <default>""</default>
+        <summary>Custom timezone</summary>
+        <description></description>
+    </key>        
+    <key type="b" name="use-default-timezone">
+        <default>true</default>
+        <summary>Should default system timezone be used</summary>
         <description></description>
     </key>    
     <key type="b" name="remove-messages-indicator">
@@ -31,6 +55,28 @@
         <default>10</default>
         <summary>Font size</summary>
         <description></description>
-    </key>    
+    </key> 
+    <key type="i" name="update-level">
+        <default>1</default>
+        <summary>Update Clock Every</summary>
+        <description>
+            0 = every minute
+            1 = every seconds
+            2 = 2 time in a second
+            3 = 3 time in a second
+            4 = 4 time in a second
+            5 = 5 time in a second
+            6 = 6 time in a second
+            7 = 7 time in a second
+            8 = 8 time in a second
+            9 = 9 time in a second
+            10 = 10 time in a second
+            11 = 11 time in a second
+            12 = 12 time in a second
+            13 = 13 time in a second
+            14 = 14 time in a second
+            15 = 15 time in a second
+        </description>
+    </key>      
   </schema>
 </schemalist>

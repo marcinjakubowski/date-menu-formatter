@@ -23,7 +23,8 @@ export default class extends createFormatter('SimpleDateFormat', '', {
   }
 }
 
-export const help = new FormatterHelp(
+export function help() {
+  return new FormatterHelp(
   'https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table',
   [
     ['y', 'year', '2023'],
@@ -64,3 +65,4 @@ export const help = new FormatterHelp(
     ['\\n', 'new line', ''],
   ]
 )
+}

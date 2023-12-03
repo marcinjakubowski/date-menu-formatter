@@ -23,7 +23,8 @@ export default class extends createFormatter('Luxon', '', {
   }
 }
 
-export const help = new FormatterHelp(
+export function help() {
+  return new FormatterHelp(
   'https://moment.github.io/luxon/#/formatting?id=table-of-tokens',
   [
     ['y', 'year', '2023'],
@@ -72,3 +73,4 @@ export const help = new FormatterHelp(
     ['\\n', 'new line', ''],
   ]
 )
+}

@@ -43,7 +43,7 @@ let CUSTOM_TIMEZONE = ''
 let REMOVE_MESSAGES_INDICATOR = false
 let APPLY_ALL_PANELS = false
 let FONT_SIZE = 1
-let EVERY = updateLevel()
+let EVERY = null
 
 function _getDateMenuButton(panel) {
   return panel.statusArea.dateMenu.get_children()[0]
@@ -52,6 +52,8 @@ function _getDateMenuButton(panel) {
 export default class DateMenuFormatter extends Extension {
   constructor(metadata) {
     super(metadata)
+
+    EVERY = updateLevel()
 
     this.formatters = null
     this._formatters_load_promise = null
@@ -287,6 +289,7 @@ export default class DateMenuFormatter extends Extension {
     }
     this._settings = null
     this.formatters = null
+    this._formatter = null
     this._formatters_load_promise = null
     this.display?.forEach((d) => d?.destroy())
     this._displays = null

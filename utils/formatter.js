@@ -68,7 +68,7 @@ export class FormatterManager {
     return this.formatters[key] ? this.formatters[key].default : undefined
   }
   getFormatterHelp(key) {
-    return this.formatters[key] ? this.formatters[key].help : undefined
+    return this.formatters[key] ? this.formatters[key].help() : undefined
   }
 
   asList() {

@@ -18,8 +18,10 @@ export default class extends createFormatter('Swatch Beats') {
   }
 }
 
-export const help = new FormatterHelp(
+export function help() {
+  return new FormatterHelp(
   '',
   [['b', 'Beats', '@500']],
   [['s', 'Sub Beats', '.12']]
 )
+}

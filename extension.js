@@ -53,8 +53,6 @@ export default class DateMenuFormatter extends Extension {
   constructor(metadata) {
     super(metadata)
 
-    EVERY = updateLevel()
-
     this.formatters = null
     this._formatters_load_promise = null
     this._displays = null
@@ -226,6 +224,7 @@ export default class DateMenuFormatter extends Extension {
   }
 
   enable() {
+    EVERY = updateLevel()
     this.formatters = new FormatterManager()
     this._formatters_load_promise = this.formatters.loadFormatters()
     this._displays = [this._createDisplay()]
@@ -274,6 +273,7 @@ export default class DateMenuFormatter extends Extension {
   }
 
   disable() {
+    EVERY = null
     const [affectedPanels, unaffectedPanels] = this._getPanels()
     const allPanels = [...affectedPanels, ...unaffectedPanels]
     this._disableOn(allPanels)

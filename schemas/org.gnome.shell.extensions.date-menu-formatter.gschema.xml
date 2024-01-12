@@ -77,6 +77,15 @@
             14 = 14 time in a second
             15 = 15 time in a second
         </description>
-    </key>      
+    </key>
+    <key type="s" name="text-align">
+        <default>"center"</default>
+        <summary>Align the label</summary>
+        <description>
+            left
+            center
+            right
+        </description>
+    </key>     
   </schema>
 </schemalist>

@@ -1,5 +1,9 @@
 import GLib from 'gi://GLib'
 
+export const TEXT_ALIGN_START = 'left'
+export const TEXT_ALIGN_CENTER = 'center'
+export const TEXT_ALIGN_END = 'right'
+
 function currentOptions() {
   return new Intl.DateTimeFormat().resolvedOptions()
 }

@@ -29,6 +29,7 @@ import {
   getCurrentCalendar,
   getCurrentTimezone,
   updateLevel,
+  TEXT_ALIGN_CENTER,
 } from './utils/general.js'
 import { FormatterManager } from './utils/formatter.js'
 import * as prefFields from './utils/prefFields.js'
@@ -44,6 +45,7 @@ let REMOVE_MESSAGES_INDICATOR = false
 let APPLY_ALL_PANELS = false
 let FONT_SIZE = 1
 let EVERY = null
+let TEXT_ALIGN_MODE = ''
 
 function _getDateMenuButton(panel) {
   return panel.statusArea.dateMenu.get_children()[0]
@@ -52,8 +54,6 @@ function _getDateMenuButton(panel) {
 export default class DateMenuFormatter extends Extension {
   constructor(metadata) {
     super(metadata)
-
-    EVERY = updateLevel()
 
     this.formatters = null
     this._formatters_load_promise = null
@@ -105,6 +105,9 @@ export default class DateMenuFormatter extends Extension {
     CUSTOM_TIMEZONE = this._settings.get_string(prefFields.CUSTOM_TIMEZONE)
     APPLY_ALL_PANELS = this._settings.get_boolean(prefFields.APPLY_ALL_PANELS)
     FONT_SIZE = this._settings.get_int(prefFields.FONT_SIZE)
+
+    TEXT_ALIGN_MODE =
+      this._settings.get_string(prefFields.TEXT_ALIGN) || TEXT_ALIGN_CENTER
 
     const curLvl = this._settings.get_int(prefFields.UPDATE_LEVEL)
     if (EVERY.lvl !== curLvl) {
@@ -221,11 +224,12 @@ export default class DateMenuFormatter extends Extension {
     this._disableOn(unaffectedPanels)
     this._displays.forEach(
       (display) =>
-        (display.style = `font-size: ${FONT_SIZE}pt; text-align: center`)
+        (display.style = `font-size: ${FONT_SIZE}pt; text-align: ${TEXT_ALIGN_MODE}`)
     )
   }
 
   enable() {
+    EVERY = updateLevel()
     this.formatters = new FormatterManager()
     this._formatters_load_promise = this.formatters.loadFormatters()
     this._displays = [this._createDisplay()]
@@ -274,6 +278,7 @@ export default class DateMenuFormatter extends Extension {
   }
 
   disable() {
+    EVERY = null
     const [affectedPanels, unaffectedPanels] = this._getPanels()
     const allPanels = [...affectedPanels, ...unaffectedPanels]
     this._disableOn(allPanels)

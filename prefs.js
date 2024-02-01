@@ -36,6 +36,9 @@ import {
   getCurrentTimezone,
   getCurrentLocale,
   updateLevelToString,
+  TEXT_ALIGN_START,
+  TEXT_ALIGN_CENTER,
+  TEXT_ALIGN_END,
 } from './utils/general.js'
 import { useAddRow, createLabel, addBox, table, a, b } from './utils/markup.js'
 import { CALENDAR_LIST, FormatterManager } from './utils/formatter.js'
@@ -79,6 +82,7 @@ class Preferences {
   createUI() {
     this.UIcreateFormatterSetting()
     this.UIcreateFontSizeSetting()
+    this.UIcreateTextAlignSetting()
     this.UIcreatePatternSetting()
     this.UIcreatePatternPreview()
     this.addSeparator()
@@ -436,6 +440,49 @@ class Preferences {
       'value',
       Gio.SettingsBindFlags.DEFAULT
     )
+  }
+  UIcreateTextAlignSetting() {
+    const tAlignBox = new Gtk.Box({
+      orientation: Gtk.Orientation.HORIZONTAL,
+      spacing: 0,
+    })
+    tAlignBox.set_css_classes(['linked'])
+
+    const buttons = [
+      {
+        btn: Gtk.Button.new_from_icon_name('format-justify-left-symbolic'),
+        key: TEXT_ALIGN_START,
+      },
+      {
+        btn: Gtk.Button.new_from_icon_name('format-justify-center-symbolic'),
+        key: TEXT_ALIGN_CENTER,
+      },
+      {
+        btn: Gtk.Button.new_from_icon_name('format-justify-right-symbolic'),
+        key: TEXT_ALIGN_END,
+      },
+    ]
+    const settings = this.settings
+    const selected = {
+      get value() {
+        return settings.get_string(prefFields.TEXT_ALIGN)
+      },
+      set value(sel) {
+        buttons.forEach(({ btn, key }) => {
+          btn.set_sensitive(key !== sel)
+        })
+        settings.set_string(prefFields.TEXT_ALIGN, sel)
+      },
+    }
+    selected.value = selected.value || TEXT_ALIGN_CENTER
+    buttons.forEach(({ btn, key }) => {
+      addBox(tAlignBox, btn)
+      btn.connect('clicked', function () {
+        selected.value = key
+      })
+    })
+
+    this.addRow(createLabel(_('Align Text')), tAlignBox)
   }
 
   UIcreateFormatterHelp() {

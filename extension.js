@@ -115,17 +115,19 @@ export default class DateMenuFormatter extends Extension {
       if (this._timerId !== -1) this.restart()
     }
 
-    const locale = USE_DEFAULT_LOCALE ? getCurrentLocale() : CUSTOM_LOCALE
-    const calendar = USE_DEFAULT_CALENDAR
-      ? getCurrentCalendar()
-      : CUSTOM_CALENDAR
-    const timezone = USE_DEFAULT_TIMEZONE
-      ? getCurrentTimezone()
-      : CUSTOM_TIMEZONE
 
     this._formatters_load_promise.then(() => {
       const formatterKey = this._settings.get_string(prefFields.FORMATTER)
       const formatter = this.formatters.getFormatter(formatterKey)
+      const locale = USE_DEFAULT_LOCALE || !USE_DEFAULT_LOCALE && !formatter.can.customLocale // use default if formatter doesn't support custom
+        ? getCurrentLocale() 
+        : CUSTOM_LOCALE
+      const calendar = USE_DEFAULT_CALENDAR || !USE_DEFAULT_CALENDAR && !formatter.can.customCalendar // use default if formatter doesn't support custom
+        ? getCurrentCalendar()
+        : CUSTOM_CALENDAR
+      const timezone = USE_DEFAULT_TIMEZONE || !USE_DEFAULT_TIMEZONE && !formatter.can.customTimezone // use default if formatter doesn't support custom
+        ? getCurrentTimezone()
+        : CUSTOM_TIMEZONE
       if (formatter) {
         this._formatter = new formatter(timezone, locale, calendar)
       }

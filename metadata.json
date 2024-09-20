@@ -3,7 +3,7 @@
   "description": "Allows customization of the date display in the panel.\n\nMight be especially useful if you're using a horizontal panel which does not at all work well with the default date display.\n\nCHANGELOG\nVersion 5: added support for multiple Dash To Panel panels\nVersion 6: fixed issues on earlier Gnome Shell versions\nVersion 10: fixed clock hover style (by bomdia)\nVersion 11: Gnome 45 update by andyholmes@github\nVersion 12: added support for advanced formatters by bomdia@github\nVersion 15: added text alignment choice by bomdia@github",
   "uuid": "date-menu-formatter@marcinjakubowski.github.com",
   "shell-version": [
-    "45", "46"
+    "45", "46", "47"
   ],
   "gettext-domain": "date-menu-formatter",
   "settings-schema": "org.gnome.shell.extensions.date-menu-formatter",

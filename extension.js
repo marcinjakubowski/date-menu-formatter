@@ -291,7 +291,7 @@ export default class DateMenuFormatter extends Extension {
       this._settingsChangedId = null
     }
     if (this._dashToPanelConnection) {
-      global.dashToPanel.disconnect(this._dashToPanelConnection)
+      global.dashToPanel?.disconnect(this._dashToPanelConnection)
       this._dashToPanelConnection = null
     }
     this._settings = null

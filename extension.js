@@ -17,6 +17,7 @@
  */
 
 import GLib from 'gi://GLib'
+import Gio from 'gi://Gio';
 import Clutter from 'gi://Clutter'
 import St from 'gi://St'
 
@@ -63,6 +64,10 @@ export default class DateMenuFormatter extends Extension {
     this._dashToPanelConnection = null
     this._formatter = null
     this._update = true
+    this.localTimeFile = null
+    this.localTimeFileMonitor = null
+    this.automaticTimezoneSetting = null
+    this.automaticTimezoneSettingId = null
   }
 
   _createDisplay() {
@@ -78,7 +83,12 @@ export default class DateMenuFormatter extends Extension {
 
   _loadSettings() {
     this._settings = this.getSettings()
+    this.automaticTimezoneSetting = Gio.Settings.new('org.gnome.desktop.datetime')
     this._settingsChangedId = this._settings.connect(
+      'changed',
+      this._onSettingsChange.bind(this)
+    )
+    this.automaticTimezoneSettingId = this.automaticTimezoneSetting.connect(
       'changed',
       this._onSettingsChange.bind(this)
     )
@@ -241,6 +251,10 @@ export default class DateMenuFormatter extends Extension {
         () => this._onSettingsChange()
       )
     }
+    this.localTimeFile = Gio.File.new_for_path('/etc/localtime');
+    this.localTimeFileMonitor = this.localTimeFile.monitor(Gio.FileMonitorFlags.WATCH_MOVES, null);
+    this.localTimeFileMonitor.connect('changed',()=>this._onSettingsChange())
+    
     this._loadSettings()
     const [affectedPanels, _] = this._getPanels()
     this._enableOn(affectedPanels)
@@ -290,10 +304,18 @@ export default class DateMenuFormatter extends Extension {
       this._settings.disconnect(this._settingsChangedId)
       this._settingsChangedId = null
     }
+    if(this.automaticTimezoneSettingId) {
+      this.automaticTimezoneSetting.disconnect(this.automaticTimezoneSettingId)
+      this.automaticTimezoneSettingId = null
+    }
     if (this._dashToPanelConnection) {
       global.dashToPanel?.disconnect(this._dashToPanelConnection)
       this._dashToPanelConnection = null
     }
+    this.localTimeFileMonitor.cancel()
+    this.localTimeFileMonitor = null
+    this.localTimeFile = null
+    this.automaticTimezoneSetting = null 
     this._settings = null
     this.formatters = null
     this._formatter = null

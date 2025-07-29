@@ -3,6 +3,7 @@ import GLib from 'gi://GLib'
 export const TEXT_ALIGN_START = 'left'
 export const TEXT_ALIGN_CENTER = 'center'
 export const TEXT_ALIGN_END = 'right'
+export const FONT_WEIGHT_OPTIONS = ['initial', 'lighter', 'normal', 'bold', 'bolder']
 
 function currentOptions() {
   return new Intl.DateTimeFormat().resolvedOptions()

@@ -45,6 +45,7 @@ let CUSTOM_TIMEZONE = ''
 let REMOVE_MESSAGES_INDICATOR = false
 let APPLY_ALL_PANELS = false
 let FONT_SIZE = 1
+let FONT_WEIGHT = ''
 let EVERY = null
 let TEXT_ALIGN_MODE = ''
 
@@ -115,6 +116,7 @@ export default class DateMenuFormatter extends Extension {
     CUSTOM_TIMEZONE = this._settings.get_string(prefFields.CUSTOM_TIMEZONE)
     APPLY_ALL_PANELS = this._settings.get_boolean(prefFields.APPLY_ALL_PANELS)
     FONT_SIZE = this._settings.get_int(prefFields.FONT_SIZE)
+    FONT_WEIGHT = this._settings.get_string(prefFields.FONT_WEIGHT)
 
     TEXT_ALIGN_MODE =
       this._settings.get_string(prefFields.TEXT_ALIGN) || TEXT_ALIGN_CENTER
@@ -236,7 +238,7 @@ export default class DateMenuFormatter extends Extension {
     this._disableOn(unaffectedPanels)
     this._displays.forEach(
       (display) =>
-        (display.style = `font-size: ${FONT_SIZE}pt; text-align: ${TEXT_ALIGN_MODE}`)
+        (display.style = `font-size: ${FONT_SIZE}pt; font-weight: ${FONT_WEIGHT}; text-align: ${TEXT_ALIGN_MODE}`)
     )
   }
 

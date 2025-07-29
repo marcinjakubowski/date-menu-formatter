@@ -56,6 +56,11 @@
         <summary>Font size</summary>
         <description></description>
     </key> 
+    <key type="s" name="font-weight">
+        <default>"initial"</default>
+        <summary>Font weight</summary>
+        <description></description>
+    </key>
     <key type="i" name="update-level">
         <default>1</default>
         <summary>Update Clock Every</summary>

@@ -39,6 +39,7 @@ import {
   TEXT_ALIGN_START,
   TEXT_ALIGN_CENTER,
   TEXT_ALIGN_END,
+  FONT_WEIGHT_OPTIONS,
 } from './utils/general.js'
 import { useAddRow, createLabel, addBox, table, a, b } from './utils/markup.js'
 import { CALENDAR_LIST, FormatterManager } from './utils/formatter.js'
@@ -82,6 +83,7 @@ class Preferences {
   createUI() {
     this.UIcreateFormatterSetting()
     this.UIcreateFontSizeSetting()
+    this.UIcreateFontWeightSetting()
     this.UIcreateTextAlignSetting()
     this.UIcreatePatternSetting()
     this.UIcreatePatternPreview()
@@ -483,6 +485,30 @@ class Preferences {
     })
 
     this.addRow(createLabel(_('Align Text')), tAlignBox)
+  }
+
+  UIcreateFontWeightSetting() {
+    const fontWeightSelect = new Gtk.ComboBoxText({
+      hexpand: true,
+      halign: Gtk.Align.FILL,
+    })
+
+    FONT_WEIGHT_OPTIONS.forEach(option => {
+      fontWeightSelect.append(option, option)
+    })
+
+    fontWeightSelect.set_active_id(
+      this.settings.get_string(prefFields.FONT_WEIGHT)
+    )
+
+    this.addRow(createLabel(_('Font weight')), fontWeightSelect)
+
+    this.settings.bind(
+      prefFields.FONT_WEIGHT,
+      fontWeightSelect,
+      'active-id',
+      Gio.SettingsBindFlags.DEFAULT
+    )
   }
 
   UIcreateFormatterHelp() {

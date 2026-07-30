@@ -85,6 +85,7 @@ class Preferences {
     this.UIcreateFontSizeSetting()
     this.UIcreateFontWeightSetting()
     this.UIcreateTextAlignSetting()
+    this.UIcreateUseMarkupSetting()
     this.UIcreatePatternSetting()
     this.UIcreatePatternPreview()
     this.addSeparator()
@@ -162,7 +163,13 @@ class Preferences {
 
   UIcreatePatternPreview() {
     this._preview = createLabel('')
-    this._preview.set_use_markup(true)
+    // Keep the preview rendering the pattern the same way the panel will.
+    this.settings.bind(
+      prefFields.USE_MARKUP,
+      this._preview,
+      'use-markup',
+      Gio.SettingsBindFlags.GET
+    )
     this.addRow(createLabel(_('Preview')), this._preview)
   }
 
@@ -397,6 +404,18 @@ class Preferences {
     this.settings.bind(
       prefFields.REMOVE_MESSAGES_INDICATOR,
       removeMessagesIndicatorEdit,
+      'active',
+      Gio.SettingsBindFlags.DEFAULT
+    )
+  }
+
+  UIcreateUseMarkupSetting() {
+    const useMarkupEdit = new Gtk.Switch()
+
+    this.addRow(createLabel(_('Use Pango markup')), useMarkupEdit)
+    this.settings.bind(
+      prefFields.USE_MARKUP,
+      useMarkupEdit,
       'active',
       Gio.SettingsBindFlags.DEFAULT
     )

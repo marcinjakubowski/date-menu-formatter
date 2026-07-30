@@ -19,6 +19,7 @@
 import GLib from 'gi://GLib'
 import Gio from 'gi://Gio';
 import Clutter from 'gi://Clutter'
+import Pango from 'gi://Pango'
 import St from 'gi://St'
 
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js'
@@ -48,6 +49,11 @@ let FONT_SIZE = 1
 let FONT_WEIGHT = ''
 let EVERY = null
 let TEXT_ALIGN_MODE = ''
+let USE_MARKUP = false
+
+// pango_parse_markup() takes a gunichar, which gjs maps to a one character
+// string, not a number. NUL means "no accelerator marker".
+const MARKUP_ACCEL_MARKER = String.fromCharCode(0)
 
 function _getDateMenuButton(panel) {
   return panel.statusArea.dateMenu.get_children()[0]
@@ -115,6 +121,7 @@ export default class DateMenuFormatter extends Extension {
     )
     CUSTOM_TIMEZONE = this._settings.get_string(prefFields.CUSTOM_TIMEZONE)
     APPLY_ALL_PANELS = this._settings.get_boolean(prefFields.APPLY_ALL_PANELS)
+    USE_MARKUP = this._settings.get_boolean(prefFields.USE_MARKUP)
     FONT_SIZE = this._settings.get_int(prefFields.FONT_SIZE)
     FONT_WEIGHT = this._settings.get_string(prefFields.FONT_WEIGHT)
 
@@ -281,9 +288,27 @@ export default class DateMenuFormatter extends Extension {
     this.start()
   }
 
+  _setDisplayText(display, text) {
+    if (USE_MARKUP) {
+      try {
+        // Validate first: set_markup() only warns on a bad pattern and leaves
+        // the label unchanged, which would freeze the clock.
+        Pango.parse_markup(text, -1, MARKUP_ACCEL_MARKER)
+        display.clutter_text.set_markup(text)
+        return
+      } catch (e) {
+        // Invalid markup. Drop the tags rather than printing them on the
+        // panel, which is unreadable at clock size.
+        text = text.replace(/<[^>]*>/g, '')
+      }
+    }
+    display.clutter_text.use_markup = false
+    display.text = text
+  }
+
   update() {
     const setText = (text) =>
-      this._displays.forEach((display) => (display.text = text))
+      this._displays.forEach((display) => this._setDisplayText(display, text))
     try {
       setText(this._formatter.format(PATTERN, new Date()))
     } catch (e) {

@@ -46,6 +46,11 @@
         <summary>Should unread messages indicator be removed</summary>
         <description></description>
     </key>    
+    <key type="b" name="use-markup">
+        <default>false</default>
+        <summary>Should the pattern be parsed as Pango markup</summary>
+        <description>When enabled, Pango markup tags in the pattern are rendered instead of shown literally, so parts of the pattern can be styled individually. Off by default, because a pattern containing a bare ampersand or angle bracket is not valid markup.</description>
+    </key>
     <key type="b" name="apply-all-panels">
         <default>false</default>
         <summary>Should extension modify all Dash To Panel panels</summary>

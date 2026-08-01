@@ -184,6 +184,15 @@ export default class DateMenuFormatter extends Extension {
   _enableOn(panels) {
     panels.forEach((panel, idx) => {
       const dateMenuButton = _getDateMenuButton(panel)
+      // A display left over from a previous enable is unreachable through
+      // this._displays, so the panel would keep two clocks with the stale one
+      // frozen. Checked against the whole list, not against index idx, since a
+      // display that merely moved index is still live.
+      const stale = dateMenuButton.dateMenuFormatterDisplay
+      if (stale && !this._displays.includes(stale)) {
+        stale.destroy()
+        dateMenuButton.dateMenuFormatterDisplay = null
+      }
       if (!this._displays[idx].get_parent()) {
         dateMenuButton.insert_child_at_index(this._displays[idx], 1)
         dateMenuButton.dateMenuFormatterDisplay = this._displays[idx]
@@ -271,7 +280,10 @@ export default class DateMenuFormatter extends Extension {
   }
   stop(force) {
     if (force) {
-      GLib.Source.remove(this._timerId)
+      if (this._timerId) {
+        GLib.Source.remove(this._timerId)
+        this._timerId = null
+      }
     } else {
       this._update = false
     }
@@ -301,7 +313,10 @@ export default class DateMenuFormatter extends Extension {
     const allPanels = [...affectedPanels, ...unaffectedPanels]
     this._disableOn(allPanels)
     this._restoreIndicator(allPanels)
-    this.stop()
+    // Must be forced. Clearing _update only ends the timer on its NEXT tick,
+    // and that tick runs after this method has nulled _displays, throwing
+    // "can't access property forEach, this._displays is null".
+    this.stop(true)
     if (this._settingsChangedId) {
       this._settings.disconnect(this._settingsChangedId)
       this._settingsChangedId = null
@@ -322,7 +337,7 @@ export default class DateMenuFormatter extends Extension {
     this.formatters = null
     this._formatter = null
     this._formatters_load_promise = null
-    this.display?.forEach((d) => d?.destroy())
+    this._displays?.forEach((d) => d?.destroy())
     this._displays = null
   }
 }

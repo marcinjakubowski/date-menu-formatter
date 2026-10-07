@@ -67,6 +67,7 @@ export default class DateMenuFormatter extends Extension {
     this._wallClockId = null
     this._settingsChangedId = null
     this._dashToPanelConnection = null
+    this._extensionManagerConnection = null
     this._formatter = null
     this._update = true
     this.localTimeFile = null
@@ -244,6 +245,22 @@ export default class DateMenuFormatter extends Extension {
       (display) =>
         (display.style = `font-size: ${FONT_SIZE}pt; font-weight: ${FONT_WEIGHT}; text-align: ${TEXT_ALIGN_MODE}`)
     )
+
+    // Draw straight away. A display added here is empty until the next tick,
+    // which is up to a minute on the lowest update level.
+    if (EVERY !== null) this.update()
+  }
+
+  // Returns true once connected, false while Dash to Panel is still absent.
+  _connectDashToPanel() {
+    if (this._dashToPanelConnection) return true
+    if (!global.dashToPanel) return false
+
+    this._dashToPanelConnection = global.dashToPanel.connect(
+      'panels-created',
+      () => this._onSettingsChange()
+    )
+    return true
   }
 
   enable() {
@@ -251,10 +268,20 @@ export default class DateMenuFormatter extends Extension {
     this.formatters = new FormatterManager()
     this._formatters_load_promise = this.formatters.loadFormatters()
     this._displays = [this._createDisplay()]
-    if (global.dashToPanel) {
-      this._dashToPanelConnection = global.dashToPanel.connect(
-        'panels-created',
-        () => this._onSettingsChange()
+    if (!this._connectDashToPanel()) {
+      // Extension load order is not fixed, so Dash to Panel may not have been
+      // enabled yet. Watch for it instead of giving up: without this its extra
+      // panels keep the stock clock until some setting happens to change, with
+      // nothing logged to explain why.
+      this._extensionManagerConnection = Main.extensionManager.connect(
+        'extension-state-changed',
+        () => {
+          if (!this._connectDashToPanel()) return
+          Main.extensionManager.disconnect(this._extensionManagerConnection)
+          this._extensionManagerConnection = null
+          // Its panels already exist, so panels-created will not fire again.
+          this._onSettingsChange()
+        }
       )
     }
     this.localTimeFile = Gio.File.new_for_path('/etc/localtime');
@@ -364,6 +391,10 @@ export default class DateMenuFormatter extends Extension {
     if (this._dashToPanelConnection) {
       global.dashToPanel?.disconnect(this._dashToPanelConnection)
       this._dashToPanelConnection = null
+    }
+    if (this._extensionManagerConnection) {
+      Main.extensionManager.disconnect(this._extensionManagerConnection)
+      this._extensionManagerConnection = null
     }
     this.localTimeFileMonitor.cancel()
     this.localTimeFileMonitor = null

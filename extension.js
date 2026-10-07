@@ -19,6 +19,7 @@
 import GLib from 'gi://GLib'
 import Gio from 'gi://Gio';
 import Clutter from 'gi://Clutter'
+import GnomeDesktop from 'gi://GnomeDesktop'
 import St from 'gi://St'
 
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js'
@@ -30,6 +31,7 @@ import {
   getCurrentCalendar,
   getCurrentTimezone,
   updateLevel,
+  MINUTE_IN_MS,
   TEXT_ALIGN_CENTER,
 } from './utils/general.js'
 import { FormatterManager } from './utils/formatter.js'
@@ -61,6 +63,8 @@ export default class DateMenuFormatter extends Extension {
     this._formatters_load_promise = null
     this._displays = null
     this._timerId = -1
+    this._wallClock = null
+    this._wallClockId = null
     this._settingsChangedId = null
     this._dashToPanelConnection = null
     this._formatter = null
@@ -262,18 +266,64 @@ export default class DateMenuFormatter extends Extension {
     this._enableOn(affectedPanels)
     this.start()
   }
+  // Returns true if our GLib timeout source is still alive in the main loop.
+  // GJS blocks JS callbacks that would run during a GC sweep, and a blocked
+  // SourceFunc is treated as returning FALSE, so GLib destroys the source for
+  // good and the clock silently freezes. There is no way to detect that from
+  // inside the callback, so we probe the main context instead.
+  _timerAlive() {
+    if (this._timerId === -1) return false
+    return GLib.MainContext.default().find_source_by_id(this._timerId) !== null
+  }
+
+  _removeTimer() {
+    if (this._timerId !== -1) {
+      if (this._timerAlive()) GLib.Source.remove(this._timerId)
+      this._timerId = -1
+    }
+  }
+
   start() {
     this._update = true
+    this._removeTimer()
     this._timerId = GLib.timeout_add(EVERY.priority, EVERY.timeout, () =>
       this.update()
     )
+
+    // Watchdog: GnomeDesktop.WallClock drives its 'clock' property from C, so
+    // notify::clock keeps being emitted even when JS timeouts have been killed
+    // by the GC-sweep guard (a blocked signal handler only misses that single
+    // emission; the connection itself survives). This is the same clock source
+    // GNOME's own panel uses, which is why the stock clock never freezes.
+    // Re-arm the timeout whenever we notice it has died.
+    if (!this._wallClock) {
+      this._wallClock = new GnomeDesktop.WallClock()
+      this._wallClockId = this._wallClock.connect('notify::clock', () => {
+        if (!this._update || this._timerAlive()) return
+        this._timerId = GLib.timeout_add(EVERY.priority, EVERY.timeout, () =>
+          this.update()
+        )
+        this.update()
+      })
+    }
+    // Only ask the wall clock for per-second resolution when the configured
+    // interval is sub-minute; at update level 0 a minute-granular watchdog is
+    // enough and avoids waking up every second for nothing.
+    this._wallClock.force_seconds = EVERY.timeout < MINUTE_IN_MS
+
     this.update()
   }
   stop(force) {
     if (force) {
-      GLib.Source.remove(this._timerId)
+      this._removeTimer()
     } else {
       this._update = false
+      this._removeTimer()
+      if (this._wallClockId) {
+        this._wallClock.disconnect(this._wallClockId)
+        this._wallClockId = null
+      }
+      this._wallClock = null
     }
   }
   restart() {
@@ -282,6 +332,7 @@ export default class DateMenuFormatter extends Extension {
   }
 
   update() {
+    if (!this._update || !this._displays) return GLib.SOURCE_REMOVE
     const setText = (text) =>
       this._displays.forEach((display) => (display.text = text))
     try {
@@ -292,7 +343,7 @@ export default class DateMenuFormatter extends Extension {
       if (this._formatter !== null && this._formatter !== undefined)
         console.log('DateMenuFormatter: ' + e.message)
     }
-    return this._update
+    return GLib.SOURCE_CONTINUE
   }
 
   disable() {

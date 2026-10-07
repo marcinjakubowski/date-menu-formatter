@@ -1,5 +1,7 @@
 import GLib from 'gi://GLib'
 
+export const MINUTE_IN_MS = 1000 * 60
+
 export const TEXT_ALIGN_START = 'left'
 export const TEXT_ALIGN_CENTER = 'center'
 export const TEXT_ALIGN_END = 'right'
@@ -22,7 +24,7 @@ export function getCurrentCalendar() {
 export function updateLevel(lvl) {
   if (typeof lvl === 'number' && !Number.isNaN(lvl)) {
     if (lvl === 0)
-      return { lvl, priority: GLib.PRIORITY_DEFAULT_IDLE, timeout: 1000 * 60 }
+      return { lvl, priority: GLib.PRIORITY_DEFAULT_IDLE, timeout: MINUTE_IN_MS }
     if (lvl > 0 && lvl <= 7)
       return { lvl, priority: GLib.PRIORITY_DEFAULT, timeout: 1000 / lvl }
     if (lvl > 7 && lvl <= 15)
